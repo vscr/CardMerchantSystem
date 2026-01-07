@@ -45,7 +45,7 @@ public class CardApplication : AggregateRoot
     public string? RejectedBy { get; private set; }
 
     // Durum Geçmişi
-    private readonly List<CardApplicationStatusHistory> _statusHistory = new();
+    private List<CardApplicationStatusHistory> _statusHistory = new();
     public IReadOnlyCollection<CardApplicationStatusHistory> StatusHistory => _statusHistory.AsReadOnly();
 
     // EF Core için
@@ -129,7 +129,7 @@ public class CardApplication : AggregateRoot
         Status = CardApplicationStatus.Approved;
         ApprovedBy = approverUsername;
         ApprovedAt = DateTime.UtcNow;
-        AddStatusHistory("Başvuru onaylandı", approverUsername);
+        //AddStatusHistory("Başvuru onaylandı", approverUsername);
         MarkAsUpdated(approverUsername);
 
         AddDomainEvent(new CardApplicationApprovedEvent(Id, CustomerTckn.Value));

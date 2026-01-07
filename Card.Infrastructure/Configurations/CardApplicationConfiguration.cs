@@ -90,13 +90,16 @@ public class CardApplicationConfiguration : IEntityTypeConfiguration<CardApplica
         builder.Property(x => x.UpdatedBy).HasMaxLength(50);
 
         // Concurrency token
-        builder.Property(x => x.Version).IsConcurrencyToken();
+        //builder.Property(x => x.Version).IsConcurrencyToken();
 
-        // Relationship: StatusHistory
+        // Relationship: StatusHistory - private field'a erişim
         builder.HasMany(x => x.StatusHistory)
             .WithOne()
             .HasForeignKey(x => x.CardApplicationId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Metadata.FindNavigation(nameof(CardApplication.StatusHistory))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
 
         // Ignore Domain Events
         builder.Ignore(x => x.DomainEvents);
