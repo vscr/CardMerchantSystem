@@ -1,0 +1,6 @@
+@CardMerchantSystem.API_HostAddress = http://localhost:5208
+
+GET {{CardMerchantSystem.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
