@@ -11,9 +11,4 @@
     <ProjectReference Include="..\CardMerchantSystem.Shared\CardMerchantSystem.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Behaviors\" />
-    <Folder Include="Validators\" />
-  </ItemGroup>
-
 </Project>
