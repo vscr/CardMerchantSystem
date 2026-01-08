@@ -10,10 +10,4 @@
     <ProjectReference Include="..\CardMerchantSystem.Shared\CardMerchantSystem.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Entities\" />
-    <Folder Include="Events\" />
-    <Folder Include="Repositories\" />
-  </ItemGroup>
-
 </Project>
