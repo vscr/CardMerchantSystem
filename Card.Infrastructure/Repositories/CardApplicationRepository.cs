@@ -39,20 +39,18 @@ public class CardApplicationRepository : ICardApplicationRepository
 
     public async Task<bool> HasActiveApplicationAsync(TCKN tckn, CancellationToken cancellationToken = default)
     {
-        // Aktif = Pending, UnderReview, Approved, CardRequested, CardPrinted, ReadyForDelivery, InDelivery
-        var activeStatuses = new[]
-        {
-            CardApplicationStatus.Pending.Id,
-            CardApplicationStatus.UnderReview.Id,
-            CardApplicationStatus.Approved.Id,
-            CardApplicationStatus.CardRequested.Id,
-            CardApplicationStatus.CardPrinted.Id,
-            CardApplicationStatus.ReadyForDelivery.Id,
-            CardApplicationStatus.InDelivery.Id
-        };
+        var applications = await _context.CardApplications
+            .Where(x => x.CustomerTckn.Value == tckn.Value)
+            .ToListAsync(cancellationToken);
 
-        return await _context.CardApplications
-            .AnyAsync(x => x.CustomerTckn == tckn && activeStatuses.Contains(x.Status.Id), cancellationToken);
+        var finalStatusIds = new[]
+        {
+        CardApplicationStatus.Delivered.Id,
+        CardApplicationStatus.Rejected.Id,
+        CardApplicationStatus.Cancelled.Id
+    };
+
+        return applications.Any(x => !finalStatusIds.Contains(x.Status.Id));
     }
 
     public async Task<IReadOnlyList<CardApplication>> GetByStatusAsync(CardApplicationStatus status, CancellationToken cancellationToken = default)
