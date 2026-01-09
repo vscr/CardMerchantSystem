@@ -288,6 +288,6 @@ public class CardApplicationTests
 
         // Assert
         application.Status.Should().Be(CardApplicationStatus.Delivered);
-        application.StatusHistory.Should().HaveCount(8); // Pending + 7 transitions
+        application.StatusHistory.Should().HaveCount(7); // Pending + 6 transitions (Approve hariç)
     }
 }

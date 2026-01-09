@@ -32,12 +32,4 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Card\Application\" />
-    <Folder Include="Merchant\Domain\" />
-    <Folder Include="Merchant\Application\" />
-    <Folder Include="Transaction\Domain\" />
-    <Folder Include="Transaction\Application\" />
-  </ItemGroup>
-
 </Project>
