@@ -25,6 +25,9 @@
     <ProjectReference Include="..\Card.Domain\Card.Domain.csproj" />
     <ProjectReference Include="..\Card.Infrastructure\Card.Infrastructure.csproj" />
     <ProjectReference Include="..\CardMerchantSystem.Shared\CardMerchantSystem.Shared.csproj" />
+    <ProjectReference Include="..\Dispute.Application\Dispute.Application.csproj" />
+    <ProjectReference Include="..\Dispute.Domain\Dispute.Domain.csproj" />
+    <ProjectReference Include="..\Dispute.Infrastructure\Dispute.Infrastructure.csproj" />
     <ProjectReference Include="..\Merchant.Application\Merchant.Application.csproj" />
     <ProjectReference Include="..\Merchant.Domain\Merchant.Domain.csproj" />
     <ProjectReference Include="..\Merchant.Infrastructure\Merchant.Infrastructure.csproj" />
