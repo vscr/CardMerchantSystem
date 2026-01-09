@@ -4,9 +4,13 @@ using Merchant.Application;
 using Merchant.Infrastructure;
 using Transaction.Application;
 using Transaction.Infrastructure;
+using CardMerchantSystem.API.Auth.Services;
 using CardMerchantSystem.API.Jobs;
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +20,36 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
     ?? "localhost:6379";
+
+// JWT Authentication
+var jwtSecret = builder.Configuration["Jwt:Secret"]!;
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
+var jwtAudience = builder.Configuration["Jwt:Audience"]!;
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+    };
+});
+
+builder.Services.AddAuthorization();
+
+// Auth Services
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Card Module
 builder.Services.AddCardApplication();
@@ -54,7 +88,7 @@ builder.Services.AddScoped<MonthlyLimitResetJob>();
 // Controllers
 builder.Services.AddControllers();
 
-// Swagger
+// Swagger with JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -63,6 +97,32 @@ builder.Services.AddSwaggerGen(c =>
         Title = "Card Merchant System API",
         Version = "v1",
         Description = "Kart ve Üye Ýþyeri Yönetim Sistemi - LKS, Fraud, Takas"
+    });
+
+    // JWT için Swagger ayarý
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "JWT Token giriniz. Örnek: Bearer {token}"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 
@@ -79,31 +139,32 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Authentication & Authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Hangfire Dashboard
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-    DashboardTitle = "Card Merchant System - Jobs",
-    // Production'da authorization eklenecek
-    // Authorization = new[] { new HangfireAuthorizationFilter() }
+    DashboardTitle = "Card Merchant System - Jobs"
 });
 
-// Recurring Jobs (Cron schedule)
+// Recurring Jobs
 RecurringJob.AddOrUpdate<SettlementJob>(
     "daily-settlement",
     job => job.ExecuteAsync(),
-    "55 23 * * *"); // Her gün 23:55'te
+    "55 23 * * *");
 
 RecurringJob.AddOrUpdate<DailyLimitResetJob>(
     "daily-limit-reset",
     job => job.ExecuteAsync(),
-    "1 0 * * *"); // Her gün 00:01'de
+    "1 0 * * *");
 
 RecurringJob.AddOrUpdate<MonthlyLimitResetJob>(
     "monthly-limit-reset",
     job => job.ExecuteAsync(),
-    "5 0 1 * *"); // Her ayýn 1'inde 00:05'te
+    "5 0 1 * *");
 
 app.MapControllers();
 

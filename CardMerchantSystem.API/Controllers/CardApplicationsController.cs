@@ -2,12 +2,14 @@
 using Card.Application.DTOs;
 using Card.Application.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CardApplicationsController : ControllerBase
 {
     private readonly IMediator _mediator;

@@ -1,13 +1,15 @@
-﻿using Merchant.Application.Commands;
+﻿using MediatR;
+using Merchant.Application.Commands;
 using Merchant.Application.DTOs;
 using Merchant.Application.Queries;
-using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class MerchantsController : ControllerBase
 {
     private readonly IMediator _mediator;

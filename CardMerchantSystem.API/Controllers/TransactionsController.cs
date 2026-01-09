@@ -1,13 +1,15 @@
-﻿using Transaction.Application.Commands;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Transaction.Application.Commands;
 using Transaction.Application.DTOs;
 using Transaction.Application.Queries;
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TransactionsController : ControllerBase
 {
     private readonly IMediator _mediator;
