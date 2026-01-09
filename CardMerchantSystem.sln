@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transaction.Application", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transaction.Infrastructure", "Transaction.Infrastructure\Transaction.Infrastructure.csproj", "{913E9C97-3C9A-4DA8-AE3C-E8BB9FF47D3D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardMerchantSystem.Tests", "CardMerchantSystem.Tests\CardMerchantSystem.Tests.csproj", "{197480C6-B39F-4E1A-A773-C8769E3FD8A2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +95,10 @@ Global
 		{913E9C97-3C9A-4DA8-AE3C-E8BB9FF47D3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{913E9C97-3C9A-4DA8-AE3C-E8BB9FF47D3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{913E9C97-3C9A-4DA8-AE3C-E8BB9FF47D3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{197480C6-B39F-4E1A-A773-C8769E3FD8A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{197480C6-B39F-4E1A-A773-C8769E3FD8A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{197480C6-B39F-4E1A-A773-C8769E3FD8A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{197480C6-B39F-4E1A-A773-C8769E3FD8A2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -116,6 +122,7 @@ Global
 		{9BEFC5B9-86CD-404B-96B6-C8BD948066D8} = {3C5F53C2-E213-4E9B-91B5-331668D7E56D}
 		{4D00BABB-772B-4575-A145-1EAB3E4522AD} = {3C5F53C2-E213-4E9B-91B5-331668D7E56D}
 		{913E9C97-3C9A-4DA8-AE3C-E8BB9FF47D3D} = {3C5F53C2-E213-4E9B-91B5-331668D7E56D}
+		{197480C6-B39F-4E1A-A773-C8769E3FD8A2} = {7D6A9570-2B0C-4B51-92F4-610CEDDD6A48}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5E3ACEE6-E796-4CEB-88A9-4FC34DA7FE95}
