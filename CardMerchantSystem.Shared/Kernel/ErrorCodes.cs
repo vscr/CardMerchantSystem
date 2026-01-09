@@ -28,7 +28,13 @@ public static class ErrorCodes
     public const string TransactionFailed = "TRANSACTION_FAILED";
     public const string FraudDetected = "FRAUD_DETECTED";
 
+    // Dispute Module
+    public const string DisputeNotFound = "DISPUTE_NOT_FOUND";
+    public const string DisputeInvalidStatus = "DISPUTE_INVALID_STATUS";
+    public const string DisputeAlreadyResolved = "DISPUTE_ALREADY_RESOLVED";
+
     // General
+    public const string NotFound = "NOT_FOUND";
     public const string ValidationError = "VALIDATION_ERROR";
     public const string ConcurrencyError = "CONCURRENCY_ERROR";
     public const string UnauthorizedAccess = "UNAUTHORIZED_ACCESS";

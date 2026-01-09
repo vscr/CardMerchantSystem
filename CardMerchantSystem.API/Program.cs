@@ -4,6 +4,8 @@ using Merchant.Application;
 using Merchant.Infrastructure;
 using Transaction.Application;
 using Transaction.Infrastructure;
+using Dispute.Application;
+using Dispute.Infrastructure;
 using CardMerchantSystem.API.Auth.Services;
 using CardMerchantSystem.API.Jobs;
 using Hangfire;
@@ -63,6 +65,10 @@ builder.Services.AddMerchantInfrastructure(connectionString);
 builder.Services.AddTransactionApplication();
 builder.Services.AddTransactionInfrastructure(connectionString, redisConnectionString);
 
+// Dispute Module
+builder.Services.AddDisputeApplication();
+builder.Services.AddDisputeInfrastructure(connectionString);
+
 // Hangfire
 builder.Services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -96,7 +102,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Card Merchant System API",
         Version = "v1",
-        Description = "Kart ve Üye Ýþyeri Yönetim Sistemi - LKS, Fraud, Takas"
+        Description = "Kart ve Üye Ýþyeri Yönetim Sistemi - LKS, Fraud, Takas, Ýtiraz Yönetimi"
     });
 
     // JWT için Swagger ayarý
