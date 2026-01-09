@@ -21,6 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BKM.Application\BKM.Application.csproj" />
+    <ProjectReference Include="..\BKM.Domain\BKM.Domain.csproj" />
+    <ProjectReference Include="..\BKM.Infrastructure\BKM.Infrastructure.csproj" />
     <ProjectReference Include="..\Campaign.Application\Campaign.Application.csproj" />
     <ProjectReference Include="..\Campaign.Domain\Campaign.Domain.csproj" />
     <ProjectReference Include="..\Campaign.Infrastructure\Campaign.Infrastructure.csproj" />

@@ -8,6 +8,8 @@ using Dispute.Application;
 using Dispute.Infrastructure;
 using Campaign.Application;
 using Campaign.Infrastructure;
+using BKM.Application;
+using BKM.Infrastructure;
 using CardMerchantSystem.API.Auth.Services;
 using CardMerchantSystem.API.Jobs;
 using Hangfire;
@@ -75,6 +77,10 @@ builder.Services.AddDisputeInfrastructure(connectionString);
 builder.Services.AddCampaignApplication();
 builder.Services.AddCampaignInfrastructure(connectionString);
 
+// BKM Module
+builder.Services.AddBKMApplication();
+builder.Services.AddBKMInfrastructure(connectionString);
+
 // Hangfire
 builder.Services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -108,7 +114,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Card Merchant System API",
         Version = "v1",
-        Description = "Kart ve Üye Ýþyeri Yönetim Sistemi - LKS, Fraud, Takas, Ýtiraz, Kampanya"
+        Description = "Kart ve Üye Ýþyeri Yönetim Sistemi - LKS, Fraud, Takas, Ýtiraz, Kampanya, BKM Switch"
     });
 
     // JWT için Swagger ayarý
