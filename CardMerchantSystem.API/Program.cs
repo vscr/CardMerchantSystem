@@ -10,6 +10,8 @@ using Campaign.Application;
 using Campaign.Infrastructure;
 using BKM.Application;
 using BKM.Infrastructure;
+using HSM.Application;
+using HSM.Infrastructure;
 using CardMerchantSystem.API.Auth.Services;
 using CardMerchantSystem.API.Jobs;
 using Hangfire;
@@ -81,6 +83,10 @@ builder.Services.AddCampaignInfrastructure(connectionString);
 builder.Services.AddBKMApplication();
 builder.Services.AddBKMInfrastructure(connectionString);
 
+// HSM Module
+builder.Services.AddHSMApplication();
+builder.Services.AddHSMInfrastructure(connectionString);
+
 // Hangfire
 builder.Services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -114,7 +120,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Card Merchant System API",
         Version = "v1",
-        Description = "Kart ve Üye Ýþyeri Yönetim Sistemi - LKS, Fraud, Takas, Ýtiraz, Kampanya, BKM Switch"
+        Description = "Kart ve Üye Ýþyeri Yönetim Sistemi - LKS, Fraud, Takas, Ýtiraz, Kampanya, BKM Switch, HSM"
     });
 
     // JWT için Swagger ayarý
