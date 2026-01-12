@@ -34,6 +34,9 @@
     <ProjectReference Include="..\Dispute.Application\Dispute.Application.csproj" />
     <ProjectReference Include="..\Dispute.Domain\Dispute.Domain.csproj" />
     <ProjectReference Include="..\Dispute.Infrastructure\Dispute.Infrastructure.csproj" />
+    <ProjectReference Include="..\Fee.Application\Fee.Application.csproj" />
+    <ProjectReference Include="..\Fee.Domain\Fee.Domain.csproj" />
+    <ProjectReference Include="..\Fee.Infrastructure\Fee.Infrastructure.csproj" />
     <ProjectReference Include="..\HSM.Application\HSM.Application.csproj" />
     <ProjectReference Include="..\HSM.Domain\HSM.Domain.csproj" />
     <ProjectReference Include="..\HSM.Infrastructure\HSM.Infrastructure.csproj" />
