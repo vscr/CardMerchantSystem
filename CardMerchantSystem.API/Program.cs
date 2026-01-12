@@ -19,6 +19,8 @@ using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Fee.Application;
+using Fee.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,6 +88,10 @@ builder.Services.AddBKMInfrastructure(connectionString);
 // HSM Module
 builder.Services.AddHSMApplication();
 builder.Services.AddHSMInfrastructure(connectionString);
+
+// Fee Module
+builder.Services.AddFeeApplication();
+builder.Services.AddFeeInfrastructure(connectionString);
 
 // Hangfire
 builder.Services.AddHangfire(config => config
