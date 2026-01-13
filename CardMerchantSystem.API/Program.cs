@@ -21,6 +21,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Fee.Application;
 using Fee.Infrastructure;
+using Statement.Application;
+using Statement.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,6 +94,10 @@ builder.Services.AddHSMInfrastructure(connectionString);
 // Fee Module
 builder.Services.AddFeeApplication();
 builder.Services.AddFeeInfrastructure(connectionString);
+
+// Statement Module
+builder.Services.AddStatementApplication();
+builder.Services.AddStatementInfrastructure(connectionString);
 
 // Hangfire
 builder.Services.AddHangfire(config => config
