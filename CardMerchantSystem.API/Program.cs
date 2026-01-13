@@ -23,6 +23,8 @@ using Fee.Application;
 using Fee.Infrastructure;
 using Statement.Application;
 using Statement.Infrastructure;
+using Accounting.Application;
+using Accounting.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -98,6 +100,10 @@ builder.Services.AddFeeInfrastructure(connectionString);
 // Statement Module
 builder.Services.AddStatementApplication();
 builder.Services.AddStatementInfrastructure(connectionString);
+
+// Accounting Module
+builder.Services.AddAccountingApplication();
+builder.Services.AddAccountingInfrastructure(connectionString);
 
 // Hangfire
 builder.Services.AddHangfire(config => config

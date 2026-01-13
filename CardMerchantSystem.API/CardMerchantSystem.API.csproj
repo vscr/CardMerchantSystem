@@ -21,6 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Accounting.Application\Accounting.Application.csproj" />
+    <ProjectReference Include="..\Accounting.Domain\Accounting.Domain.csproj" />
+    <ProjectReference Include="..\Accounting.Infrastructure\Accounting.Infrastructure.csproj" />
     <ProjectReference Include="..\BKM.Application\BKM.Application.csproj" />
     <ProjectReference Include="..\BKM.Domain\BKM.Domain.csproj" />
     <ProjectReference Include="..\BKM.Infrastructure\BKM.Infrastructure.csproj" />
