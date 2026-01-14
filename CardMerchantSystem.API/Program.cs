@@ -61,7 +61,21 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+
+
 builder.Services.AddAuthorization();
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
 // Auth Services
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -187,6 +201,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 // Authentication & Authorization
 app.UseAuthentication();
