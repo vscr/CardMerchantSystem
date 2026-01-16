@@ -32,7 +32,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Connection Strings
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Server=localhost;Database=CardMerchantDb;Trusted_Connection=True;TrustServerCertificate=True;";
+    ?? "Server=(localdb)\\MSSQLLocalDB;Database=CardMerchantDb;Trusted_Connection=True;TrustServerCertificate=True;";
 
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
     ?? "localhost:6379";
