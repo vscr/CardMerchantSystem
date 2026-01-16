@@ -16,6 +16,12 @@ public class CardApplicationRepository : ICardApplicationRepository
         _context = context;
     }
 
+    public async Task<IReadOnlyList<CardApplication>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.CardApplications
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
     public async Task<CardApplication?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.CardApplications

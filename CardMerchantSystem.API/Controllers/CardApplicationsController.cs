@@ -20,6 +20,19 @@ public class CardApplicationsController : ControllerBase
     }
 
     /// <summary>
+    /// Tüm başvuruları getirir
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<CardApplicationDto>>> GetAll(
+        CancellationToken cancellationToken)
+    {
+        var query = new GetAllCardApplicationsQuery();
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Yeni kart başvurusu oluşturur
     /// </summary>
     [HttpPost]

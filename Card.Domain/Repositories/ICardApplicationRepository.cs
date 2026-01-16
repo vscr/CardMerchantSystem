@@ -10,6 +10,7 @@ namespace Card.Domain.Repositories;
 /// </summary>
 public interface ICardApplicationRepository
 {
+    Task<IReadOnlyList<CardApplication>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<CardApplication?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<CardApplication?> GetByIdWithHistoryAsync(Guid id, CancellationToken cancellationToken = default);
