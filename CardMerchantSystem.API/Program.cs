@@ -27,6 +27,8 @@ using Accounting.Application;
 using Accounting.Infrastructure;
 using MerchantReport.Application;
 using MerchantReport.Infrastructure;
+using MerchantSettlement.Infrastructure;
+using MerchantSettlement.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -110,6 +112,10 @@ builder.Services.AddAccountingInfrastructure(connectionString);
 // MerchantReport Module
 builder.Services.AddMerchantReportApplication();
 builder.Services.AddMerchantReportInfrastructure(connectionString);
+
+// MerchantReport Module
+builder.Services.AddMerchantSettlementApplication();
+builder.Services.AddMerchantSettlementInfrastructure(connectionString);
 
 // Hangfire
 builder.Services.AddHangfire(config => config

@@ -49,6 +49,9 @@
     <ProjectReference Include="..\MerchantReport.Application\MerchantReport.Application.csproj" />
     <ProjectReference Include="..\MerchantReport.Domain\MerchantReport.Domain.csproj" />
     <ProjectReference Include="..\MerchantReport.Infrastructure\MerchantReport.Infrastructure.csproj" />
+    <ProjectReference Include="..\MerchantSettlement.Application\MerchantSettlement.Application.csproj" />
+    <ProjectReference Include="..\MerchantSettlement.Domain\MerchantSettlement.Domain.csproj" />
+    <ProjectReference Include="..\MerchantSettlement.Infrastructure\MerchantSettlement.Infrastructure.csproj" />
     <ProjectReference Include="..\Statement.Application\Statement.Application.csproj" />
     <ProjectReference Include="..\Statement.Domain\Statement.Domain.csproj" />
     <ProjectReference Include="..\Statement.Infrastructure\Statement.Infrastructure.csproj" />
