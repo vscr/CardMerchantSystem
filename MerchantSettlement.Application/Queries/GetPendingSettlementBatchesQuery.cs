@@ -9,9 +9,9 @@ public record GetPendingSettlementBatchesQuery() : IRequest<IReadOnlyList<Settle
 
 public class GetPendingSettlementBatchesQueryHandler : IRequestHandler<GetPendingSettlementBatchesQuery, IReadOnlyList<SettlementBatchDto>>
 {
-    private readonly ISettlementBatchRepository _repository;
+    private readonly IMerchantSettlementBatchRepository _repository;
 
-    public GetPendingSettlementBatchesQueryHandler(ISettlementBatchRepository repository)
+    public GetPendingSettlementBatchesQueryHandler(IMerchantSettlementBatchRepository repository)
     {
         _repository = repository;
     }
@@ -22,7 +22,7 @@ public class GetPendingSettlementBatchesQueryHandler : IRequestHandler<GetPendin
         return batches.Select(MapToDto).ToList();
     }
 
-    private static SettlementBatchDto MapToDto(SettlementBatch batch)
+    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
         return new SettlementBatchDto
         {

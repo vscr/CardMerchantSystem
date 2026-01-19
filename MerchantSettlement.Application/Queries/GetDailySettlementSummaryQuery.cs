@@ -9,9 +9,9 @@ public record GetDailySettlementSummaryQuery(DateTime Date) : IRequest<DailySett
 
 public class GetDailySettlementSummaryQueryHandler : IRequestHandler<GetDailySettlementSummaryQuery, DailySettlementSummaryDto?>
 {
-    private readonly IDailySettlementSummaryRepository _repository;
+    private readonly IMerchantDailySettlementSummaryRepository _repository;
 
-    public GetDailySettlementSummaryQueryHandler(IDailySettlementSummaryRepository repository)
+    public GetDailySettlementSummaryQueryHandler(IMerchantDailySettlementSummaryRepository repository)
     {
         _repository = repository;
     }
@@ -25,7 +25,7 @@ public class GetDailySettlementSummaryQueryHandler : IRequestHandler<GetDailySet
         return MapToDto(summary);
     }
 
-    private static DailySettlementSummaryDto MapToDto(DailySettlementSummary summary)
+    private static DailySettlementSummaryDto MapToDto(MerchantDailySettlementSummary summary)
     {
         return new DailySettlementSummaryDto
         {

@@ -5,7 +5,7 @@ namespace MerchantSettlement.Domain.Entities;
 /// <summary>
 /// Takas batch detayı - Tek bir işlem kaydı
 /// </summary>
-public class SettlementDetail : Entity
+public class MerchantSettlementDetail : Entity
 {
     public Guid SettlementBatchId { get; private set; }
 
@@ -40,9 +40,9 @@ public class SettlementDetail : Entity
     public string? AuthorizationCode { get; private set; }
     public string? ReferenceNumber { get; private set; }
 
-    private SettlementDetail() { }
+    private MerchantSettlementDetail() { }
 
-    public static SettlementDetail Create(
+    public static MerchantSettlementDetail Create(
         Guid settlementBatchId,
         string transactionId,
         string transactionNumber,
@@ -64,7 +64,7 @@ public class SettlementDetail : Entity
             ? amount - commissionAmount - feeAmount
             : -(amount - commissionAmount - feeAmount);
 
-        return new SettlementDetail
+        return new MerchantSettlementDetail
         {
             SettlementBatchId = settlementBatchId,
             TransactionId = transactionId,

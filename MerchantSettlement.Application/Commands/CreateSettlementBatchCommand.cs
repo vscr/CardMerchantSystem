@@ -11,9 +11,9 @@ public record CreateSettlementBatchCommand(CreateSettlementBatchDto Dto) : IRequ
 
 public class CreateSettlementBatchCommandHandler : IRequestHandler<CreateSettlementBatchCommand, Result<SettlementBatchDto>>
 {
-    private readonly ISettlementBatchRepository _repository;
+    private readonly IMerchantSettlementBatchRepository _repository;
 
-    public CreateSettlementBatchCommandHandler(ISettlementBatchRepository repository)
+    public CreateSettlementBatchCommandHandler(IMerchantSettlementBatchRepository repository)
     {
         _repository = repository;
     }
@@ -26,7 +26,7 @@ public class CreateSettlementBatchCommandHandler : IRequestHandler<CreateSettlem
         if (settlementType is null)
             return Result.Failure<SettlementBatchDto>("Geçersiz takas tipi");
 
-        var batchResult = SettlementBatch.Create(
+        var batchResult = MerchantSettlementBatch.Create(
             dto.MerchantId,
             dto.MerchantName,
             dto.PeriodStart,
@@ -43,7 +43,7 @@ public class CreateSettlementBatchCommandHandler : IRequestHandler<CreateSettlem
         return MapToDto(batch);
     }
 
-    private static SettlementBatchDto MapToDto(SettlementBatch batch)
+    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
         return new SettlementBatchDto
         {

@@ -16,10 +16,10 @@ namespace MerchantSettlement.Infrastructure
                     b.MigrationsAssembly(typeof(MerchantSettlementDbContext).Assembly.FullName)));
 
             // Repositories
-            services.AddScoped<ISettlementReconciliationRepository, SettlementReconciliationRepository>();
-            services.AddScoped<ISettlementBatchRepository, SettlementBatchRepository>();
+            services.AddScoped<IMerchantSettlementReconciliationRepository, MerchantSettlementReconciliationRepository>();
+            services.AddScoped<IMerchantSettlementBatchRepository, MerchantSettlementBatchRepository>();
             services.AddScoped<IMerchantPayoutRepository, MerchantPayoutRepository>();
-            services.AddScoped<IDailySettlementSummaryRepository, DailySettlementSummaryRepository>();
+            services.AddScoped<IMerchantDailySettlementSummaryRepository, MerchantDailySettlementSummaryRepository>();
 
             return services;
         }

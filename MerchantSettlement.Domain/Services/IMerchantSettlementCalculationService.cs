@@ -5,12 +5,12 @@ namespace MerchantSettlement.Domain.Services;
 /// <summary>
 /// Takas hesaplama servisi
 /// </summary>
-public interface ISettlementCalculationService
+public interface IMerchantSettlementCalculationService
 {
     /// <summary>
     /// Merchant için günlük takas hesaplar
     /// </summary>
-    Task<SettlementBatch> CalculateDailySettlementAsync(
+    Task<MerchantSettlementBatch> CalculateDailySettlementAsync(
         string merchantId,
         string merchantName,
         DateTime settlementDate,
@@ -25,7 +25,7 @@ public interface ISettlementCalculationService
         string bankCode,
         string bankName,
         string iban,
-        IEnumerable<SettlementBatch> batches,
+        IEnumerable<MerchantSettlementBatch> batches,
         decimal withholdingTaxRate = 0);
 
     /// <summary>

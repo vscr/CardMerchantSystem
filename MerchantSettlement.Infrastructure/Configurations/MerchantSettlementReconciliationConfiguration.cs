@@ -6,20 +6,22 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace MerchantSettlement.Infrastructure.Persistence.Configurations;
 
-public class SettlementBatchConfiguration : IEntityTypeConfiguration<SettlementBatch>
+public class MerchantSettlementReconciliationConfiguration : IEntityTypeConfiguration<MerchantReconciliation>
 {
-    public void Configure(EntityTypeBuilder<SettlementBatch> builder)
+    public void Configure(EntityTypeBuilder<MerchantReconciliation> builder)
     {
-        builder.ToTable("SettlementBatches");
+        builder.ToTable("MerchantSettlementReconciliations");
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.BatchNumber)
+        builder.Property(x => x.ReconciliationNumber)
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.HasIndex(x => x.BatchNumber)
+        builder.HasIndex(x => x.ReconciliationNumber)
             .IsUnique();
+
+        builder.HasIndex(x => x.SettlementBatchId);
 
         builder.Property(x => x.MerchantId)
             .IsRequired()
@@ -31,55 +33,50 @@ public class SettlementBatchConfiguration : IEntityTypeConfiguration<SettlementB
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(x => x.TotalSalesAmount)
+        builder.Property(x => x.SystemGrossAmount)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.TotalRefundAmount)
+        builder.Property(x => x.SystemCommission)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.TotalChargebackAmount)
+        builder.Property(x => x.SystemNetAmount)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.GrossAmount)
+        builder.Property(x => x.ReportedGrossAmount)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.TotalCommission)
+        builder.Property(x => x.ReportedCommission)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.TotalFee)
+        builder.Property(x => x.ReportedNetAmount)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.NetAmount)
+        builder.Property(x => x.GrossAmountDifference)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.Currency)
-            .IsRequired()
-            .HasMaxLength(3);
+        builder.Property(x => x.CommissionDifference)
+            .HasPrecision(18, 2);
 
-        builder.Property(x => x.ProcessedBy)
+        builder.Property(x => x.NetAmountDifference)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.ResolutionNotes)
+            .HasMaxLength(1000);
+
+        builder.Property(x => x.ResolvedBy)
             .HasMaxLength(100);
 
-        builder.Property(x => x.FailureReason)
-            .HasMaxLength(500);
-
-        // SettlementType enum
-        builder.Property(x => x.SettlementType)
-            .HasConversion(
-                v => v.Id,
-                v => Enumeration.FromId<SettlementType>(v)!)
-            .HasColumnName("SettlementTypeId");
-
-        // SettlementStatus enum
+        // ReconciliationStatus enum
         builder.Property(x => x.Status)
             .HasConversion(
                 v => v.Id,
-                v => Enumeration.FromId<SettlementStatus>(v)!)
+                v => Enumeration.FromId<ReconciliationStatus>(v)!)
             .HasColumnName("StatusId");
 
-        // Details ilişkisi
-        builder.HasMany(x => x.Details)
+        // Mismatches ilişkisi
+        builder.HasMany(x => x.Mismatches)
             .WithOne()
-            .HasForeignKey(x => x.SettlementBatchId)
+            .HasForeignKey(x => x.ReconciliationId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Audit fields

@@ -7,7 +7,7 @@ namespace MerchantSettlement.Domain.Entities;
 /// Günsonu takas batch'i
 /// Merchant'ın belirli bir dönemdeki işlemlerinin toplu takas kaydı
 /// </summary>
-public class SettlementBatch : AggregateRoot
+public class MerchantSettlementBatch : AggregateRoot
 {
     public string BatchNumber { get; private set; } = null!;
     public string MerchantId { get; private set; } = null!;
@@ -41,12 +41,12 @@ public class SettlementBatch : AggregateRoot
     public string? FailureReason { get; private set; }
 
     // Detaylar
-    private readonly List<SettlementDetail> _details = new();
-    public IReadOnlyCollection<SettlementDetail> Details => _details.AsReadOnly();
+    private readonly List<MerchantSettlementDetail> _details = new();
+    public IReadOnlyCollection<MerchantSettlementDetail> Details => _details.AsReadOnly();
 
-    private SettlementBatch() { }
+    private MerchantSettlementBatch() { }
 
-    public static Result<SettlementBatch> Create(
+    public static Result<MerchantSettlementBatch> Create(
         string merchantId,
         string merchantName,
         DateTime periodStart,
@@ -54,15 +54,15 @@ public class SettlementBatch : AggregateRoot
         SettlementType settlementType)
     {
         if (string.IsNullOrWhiteSpace(merchantId))
-            return Result.Failure<SettlementBatch>("Merchant ID boş olamaz");
+            return Result.Failure<MerchantSettlementBatch>("Merchant ID boş olamaz");
 
         if (string.IsNullOrWhiteSpace(merchantName))
-            return Result.Failure<SettlementBatch>("Merchant adı boş olamaz");
+            return Result.Failure<MerchantSettlementBatch>("Merchant adı boş olamaz");
 
         if (periodEnd <= periodStart)
-            return Result.Failure<SettlementBatch>("Dönem bitiş tarihi başlangıçtan sonra olmalı");
+            return Result.Failure<MerchantSettlementBatch>("Dönem bitiş tarihi başlangıçtan sonra olmalı");
 
-        var batch = new SettlementBatch
+        var batch = new MerchantSettlementBatch
         {
             BatchNumber = GenerateBatchNumber(),
             MerchantId = merchantId,
@@ -79,7 +79,7 @@ public class SettlementBatch : AggregateRoot
     /// <summary>
     /// Batch'e işlem detayı ekler
     /// </summary>
-    public Result AddDetail(SettlementDetail detail)
+    public Result AddDetail(MerchantSettlementDetail detail)
     {
         if (Status != SettlementStatus.Pending)
             return Result.Failure("Sadece beklemedeki batch'e detay eklenebilir");
@@ -92,7 +92,7 @@ public class SettlementBatch : AggregateRoot
     /// <summary>
     /// Birden fazla detay ekler
     /// </summary>
-    public Result AddDetails(IEnumerable<SettlementDetail> details)
+    public Result AddDetails(IEnumerable<MerchantSettlementDetail> details)
     {
         if (Status != SettlementStatus.Pending)
             return Result.Failure("Sadece beklemedeki batch'e detay eklenebilir");

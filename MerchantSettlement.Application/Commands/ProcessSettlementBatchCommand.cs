@@ -10,9 +10,9 @@ public record ProcessSettlementBatchCommand(Guid BatchId, string ProcessedBy) : 
 
 public class ProcessSettlementBatchCommandHandler : IRequestHandler<ProcessSettlementBatchCommand, Result<SettlementBatchDto>>
 {
-    private readonly ISettlementBatchRepository _repository;
+    private readonly IMerchantSettlementBatchRepository _repository;
 
-    public ProcessSettlementBatchCommandHandler(ISettlementBatchRepository repository)
+    public ProcessSettlementBatchCommandHandler(IMerchantSettlementBatchRepository repository)
     {
         _repository = repository;
     }
@@ -38,7 +38,7 @@ public class ProcessSettlementBatchCommandHandler : IRequestHandler<ProcessSettl
         return MapToDto(batch);
     }
 
-    private static SettlementBatchDto MapToDto(SettlementBatch batch)
+    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
         return new SettlementBatchDto
         {

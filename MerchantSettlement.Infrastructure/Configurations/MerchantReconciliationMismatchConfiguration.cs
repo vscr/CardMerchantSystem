@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace MerchantSettlement.Infrastructure.Persistence.Configurations;
 
-public class ReconciliationMismatchConfiguration : IEntityTypeConfiguration<ReconciliationMismatch>
+public class MerchantReconciliationMismatchConfiguration : IEntityTypeConfiguration<MerchantReconciliationMismatch>
 {
-    public void Configure(EntityTypeBuilder<ReconciliationMismatch> builder)
+    public void Configure(EntityTypeBuilder<MerchantReconciliationMismatch> builder)
     {
-        builder.ToTable("ReconciliationMismatches");
+        builder.ToTable("MerchantReconciliationMismatches");
 
         builder.HasKey(x => x.Id);
 

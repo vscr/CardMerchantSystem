@@ -6,7 +6,7 @@ namespace MerchantSettlement.Domain.Entities;
 /// Günlük takas özeti
 /// Tüm merchant'ların günlük özet bilgisi
 /// </summary>
-public class DailySettlementSummary : AggregateRoot
+public class MerchantDailySettlementSummary : AggregateRoot
 {
     public DateTime SettlementDate { get; private set; }
 
@@ -40,11 +40,11 @@ public class DailySettlementSummary : AggregateRoot
     public DateTime? FinalizedAt { get; private set; }
     public string? FinalizedBy { get; private set; }
 
-    private DailySettlementSummary() { }
+    private MerchantDailySettlementSummary() { }
 
-    public static DailySettlementSummary Create(DateTime settlementDate)
+    public static MerchantDailySettlementSummary Create(DateTime settlementDate)
     {
-        return new DailySettlementSummary
+        return new MerchantDailySettlementSummary
         {
             SettlementDate = settlementDate.Date,
             IsFinalized = false
@@ -54,7 +54,7 @@ public class DailySettlementSummary : AggregateRoot
     /// <summary>
     /// Batch bilgilerinden özeti günceller
     /// </summary>
-    public void UpdateFromBatches(IEnumerable<SettlementBatch> batches)
+    public void UpdateFromBatches(IEnumerable<MerchantSettlementBatch> batches)
     {
         if (IsFinalized)
             return;

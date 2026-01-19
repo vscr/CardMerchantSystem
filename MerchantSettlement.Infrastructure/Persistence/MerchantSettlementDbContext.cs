@@ -10,12 +10,12 @@ public class MerchantSettlementDbContext : DbContext
     {
     }
 
-    public DbSet<SettlementBatch> SettlementBatches => Set<SettlementBatch>();
-    public DbSet<SettlementDetail> SettlementDetails => Set<SettlementDetail>();
+    public DbSet<MerchantSettlementBatch> MerchantSettlementBatches => Set<MerchantSettlementBatch>();
+    public DbSet<MerchantSettlementDetail> MerchantSettlementDetails => Set<MerchantSettlementDetail>();
     public DbSet<MerchantPayout> MerchantPayouts => Set<MerchantPayout>();
-    public DbSet<SettlementReconciliation> SettlementReconciliations => Set<SettlementReconciliation>();
-    public DbSet<ReconciliationMismatch> ReconciliationMismatches => Set<ReconciliationMismatch>();
-    public DbSet<DailySettlementSummary> DailySettlementSummaries => Set<DailySettlementSummary>();
+    public DbSet<MerchantReconciliation> MerchantSettlementReconciliations => Set<MerchantReconciliation>();
+    public DbSet<MerchantReconciliationMismatch> MerchantReconciliationMismatches => Set<MerchantReconciliationMismatch>();
+    public DbSet<MerchantDailySettlementSummary> MerchantDailySettlementSummaries => Set<MerchantDailySettlementSummary>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

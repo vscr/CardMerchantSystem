@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace MerchantSettlement.Infrastructure.Persistence.Configurations;
 
-public class SettlementDetailConfiguration : IEntityTypeConfiguration<SettlementDetail>
+public class MerchantSettlementDetailConfiguration : IEntityTypeConfiguration<MerchantSettlementDetail>
 {
-    public void Configure(EntityTypeBuilder<SettlementDetail> builder)
+    public void Configure(EntityTypeBuilder<MerchantSettlementDetail> builder)
     {
-        builder.ToTable("SettlementDetails");
+        builder.ToTable("MerchantSettlementDetails");
 
         builder.HasKey(x => x.Id);
 

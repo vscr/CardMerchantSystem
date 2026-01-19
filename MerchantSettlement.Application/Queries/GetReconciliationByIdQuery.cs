@@ -9,9 +9,9 @@ public record GetReconciliationByIdQuery(Guid Id, bool IncludeMismatches = false
 
 public class GetReconciliationByIdQueryHandler : IRequestHandler<GetReconciliationByIdQuery, SettlementReconciliationDto?>
 {
-    private readonly ISettlementReconciliationRepository _repository;
+    private readonly IMerchantSettlementReconciliationRepository _repository;
 
-    public GetReconciliationByIdQueryHandler(ISettlementReconciliationRepository repository)
+    public GetReconciliationByIdQueryHandler(IMerchantSettlementReconciliationRepository repository)
     {
         _repository = repository;
     }
@@ -31,7 +31,7 @@ public class GetReconciliationByIdQueryHandler : IRequestHandler<GetReconciliati
         return MapToDto(reconciliation);
     }
 
-    private static SettlementReconciliationDto MapToDto(SettlementReconciliation reconciliation)
+    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
         return new SettlementReconciliationDto
         {
@@ -62,7 +62,7 @@ public class GetReconciliationByIdQueryHandler : IRequestHandler<GetReconciliati
         };
     }
 
-    private static SettlementReconciliationWithMismatchesDto MapToDtoWithMismatches(SettlementReconciliation reconciliation)
+    private static SettlementReconciliationWithMismatchesDto MapToDtoWithMismatches(MerchantReconciliation reconciliation)
     {
         return new SettlementReconciliationWithMismatchesDto
         {

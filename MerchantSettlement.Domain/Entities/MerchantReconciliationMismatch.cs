@@ -5,7 +5,7 @@ namespace MerchantSettlement.Domain.Entities;
 /// <summary>
 /// Mutabakat uyuşmazlık detayı
 /// </summary>
-public class ReconciliationMismatch : Entity
+public class MerchantReconciliationMismatch : Entity
 {
     public Guid ReconciliationId { get; private set; }
 
@@ -34,9 +34,9 @@ public class ReconciliationMismatch : Entity
     public string? ResolutionNotes { get; private set; }
     public DateTime? ResolvedAt { get; private set; }
 
-    private ReconciliationMismatch() { }
+    private MerchantReconciliationMismatch() { }
 
-    public static ReconciliationMismatch Create(
+    public static MerchantReconciliationMismatch Create(
         Guid reconciliationId,
         string mismatchType,
         string? transactionId = null,
@@ -46,7 +46,7 @@ public class ReconciliationMismatch : Entity
         decimal? reportedAmount = null,
         string? description = null)
     {
-        return new ReconciliationMismatch
+        return new MerchantReconciliationMismatch
         {
             ReconciliationId = reconciliationId,
             MismatchType = mismatchType,

@@ -9,9 +9,9 @@ public record GetSettlementBatchesByMerchantQuery(string MerchantId) : IRequest<
 
 public class GetSettlementBatchesByMerchantQueryHandler : IRequestHandler<GetSettlementBatchesByMerchantQuery, IReadOnlyList<SettlementBatchDto>>
 {
-    private readonly ISettlementBatchRepository _repository;
+    private readonly IMerchantSettlementBatchRepository _repository;
 
-    public GetSettlementBatchesByMerchantQueryHandler(ISettlementBatchRepository repository)
+    public GetSettlementBatchesByMerchantQueryHandler(IMerchantSettlementBatchRepository repository)
     {
         _repository = repository;
     }
@@ -22,7 +22,7 @@ public class GetSettlementBatchesByMerchantQueryHandler : IRequestHandler<GetSet
         return batches.Select(MapToDto).ToList();
     }
 
-    private static SettlementBatchDto MapToDto(SettlementBatch batch)
+    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
         return new SettlementBatchDto
         {

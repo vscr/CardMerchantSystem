@@ -10,9 +10,9 @@ public record AddSettlementDetailsCommand(Guid BatchId, List<AddSettlementDetail
 
 public class AddSettlementDetailsCommandHandler : IRequestHandler<AddSettlementDetailsCommand, Result<SettlementBatchDto>>
 {
-    private readonly ISettlementBatchRepository _repository;
+    private readonly IMerchantSettlementBatchRepository _repository;
 
-    public AddSettlementDetailsCommandHandler(ISettlementBatchRepository repository)
+    public AddSettlementDetailsCommandHandler(IMerchantSettlementBatchRepository repository)
     {
         _repository = repository;
     }
@@ -23,7 +23,7 @@ public class AddSettlementDetailsCommandHandler : IRequestHandler<AddSettlementD
         if (batch is null)
             return Result.Failure<SettlementBatchDto>("Batch bulunamadı");
 
-        var details = request.Details.Select(d => SettlementDetail.Create(
+        var details = request.Details.Select(d => MerchantSettlementDetail.Create(
             batch.Id,
             d.TransactionId,
             d.TransactionNumber,
@@ -52,7 +52,7 @@ public class AddSettlementDetailsCommandHandler : IRequestHandler<AddSettlementD
         return MapToDto(batch);
     }
 
-    private static SettlementBatchDto MapToDto(SettlementBatch batch)
+    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
         return new SettlementBatchDto
         {

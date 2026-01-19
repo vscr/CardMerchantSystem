@@ -10,12 +10,12 @@ public record CreateReconciliationCommand(Guid BatchId) : IRequest<Result<Settle
 
 public class CreateReconciliationCommandHandler : IRequestHandler<CreateReconciliationCommand, Result<SettlementReconciliationDto>>
 {
-    private readonly ISettlementReconciliationRepository _reconciliationRepository;
-    private readonly ISettlementBatchRepository _batchRepository;
+    private readonly IMerchantSettlementReconciliationRepository _reconciliationRepository;
+    private readonly IMerchantSettlementBatchRepository _batchRepository;
 
     public CreateReconciliationCommandHandler(
-        ISettlementReconciliationRepository reconciliationRepository,
-        ISettlementBatchRepository batchRepository)
+        IMerchantSettlementReconciliationRepository reconciliationRepository,
+        IMerchantSettlementBatchRepository batchRepository)
     {
         _reconciliationRepository = reconciliationRepository;
         _batchRepository = batchRepository;
@@ -32,7 +32,7 @@ public class CreateReconciliationCommandHandler : IRequestHandler<CreateReconcil
         if (existingReconciliation is not null)
             return Result.Failure<SettlementReconciliationDto>("Bu batch için mutabakat zaten mevcut");
 
-        var reconciliationResult = SettlementReconciliation.Create(
+        var reconciliationResult = MerchantReconciliation.Create(
             batch.Id,
             batch.MerchantId,
             batch.MerchantName,
@@ -52,7 +52,7 @@ public class CreateReconciliationCommandHandler : IRequestHandler<CreateReconcil
         return MapToDto(reconciliation);
     }
 
-    private static SettlementReconciliationDto MapToDto(SettlementReconciliation reconciliation)
+    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
         return new SettlementReconciliationDto
         {

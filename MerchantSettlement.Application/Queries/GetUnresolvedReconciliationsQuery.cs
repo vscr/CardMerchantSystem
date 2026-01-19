@@ -9,9 +9,9 @@ public record GetUnresolvedReconciliationsQuery() : IRequest<IReadOnlyList<Settl
 
 public class GetUnresolvedReconciliationsQueryHandler : IRequestHandler<GetUnresolvedReconciliationsQuery, IReadOnlyList<SettlementReconciliationDto>>
 {
-    private readonly ISettlementReconciliationRepository _repository;
+    private readonly IMerchantSettlementReconciliationRepository _repository;
 
-    public GetUnresolvedReconciliationsQueryHandler(ISettlementReconciliationRepository repository)
+    public GetUnresolvedReconciliationsQueryHandler(IMerchantSettlementReconciliationRepository repository)
     {
         _repository = repository;
     }
@@ -22,7 +22,7 @@ public class GetUnresolvedReconciliationsQueryHandler : IRequestHandler<GetUnres
         return reconciliations.Select(MapToDto).ToList();
     }
 
-    private static SettlementReconciliationDto MapToDto(SettlementReconciliation reconciliation)
+    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
         return new SettlementReconciliationDto
         {

@@ -7,7 +7,7 @@ namespace MerchantSettlement.Domain.Entities;
 /// Takas mutabakat kaydı
 /// Banka ile merchant arasındaki mutabakat takibi
 /// </summary>
-public class SettlementReconciliation : AggregateRoot
+public class MerchantReconciliation : AggregateRoot
 {
     public string ReconciliationNumber { get; private set; } = null!;
     public Guid SettlementBatchId { get; private set; }
@@ -39,17 +39,17 @@ public class SettlementReconciliation : AggregateRoot
     public ReconciliationStatus Status { get; private set; } = null!;
 
     // Eşleşmeyen işlemler
-    private readonly List<ReconciliationMismatch> _mismatches = new();
-    public IReadOnlyCollection<ReconciliationMismatch> Mismatches => _mismatches.AsReadOnly();
+    private readonly List<MerchantReconciliationMismatch> _mismatches = new();
+    public IReadOnlyCollection<MerchantReconciliationMismatch> Mismatches => _mismatches.AsReadOnly();
 
     // Çözüm bilgileri
     public string? ResolutionNotes { get; private set; }
     public string? ResolvedBy { get; private set; }
     public DateTime? ResolvedAt { get; private set; }
 
-    private SettlementReconciliation() { }
+    private MerchantReconciliation() { }
 
-    public static Result<SettlementReconciliation> Create(
+    public static Result<MerchantReconciliation> Create(
         Guid settlementBatchId,
         string merchantId,
         string merchantName,
@@ -60,9 +60,9 @@ public class SettlementReconciliation : AggregateRoot
         int systemTransactionCount)
     {
         if (string.IsNullOrWhiteSpace(merchantId))
-            return Result.Failure<SettlementReconciliation>("Merchant ID boş olamaz");
+            return Result.Failure<MerchantReconciliation>("Merchant ID boş olamaz");
 
-        var reconciliation = new SettlementReconciliation
+        var reconciliation = new MerchantReconciliation
         {
             ReconciliationNumber = GenerateReconciliationNumber(),
             SettlementBatchId = settlementBatchId,
@@ -113,7 +113,7 @@ public class SettlementReconciliation : AggregateRoot
     /// <summary>
     /// Eşleşmeyen işlem ekler
     /// </summary>
-    public Result AddMismatch(ReconciliationMismatch mismatch)
+    public Result AddMismatch(MerchantReconciliationMismatch mismatch)
     {
         if (Status.IsResolved)
             return Result.Failure("Çözülmüş mutabakata uyuşmazlık eklenemez");

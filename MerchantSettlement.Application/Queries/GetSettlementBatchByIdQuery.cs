@@ -9,9 +9,9 @@ public record GetSettlementBatchByIdQuery(Guid Id, bool IncludeDetails = false) 
 
 public class GetSettlementBatchByIdQueryHandler : IRequestHandler<GetSettlementBatchByIdQuery, SettlementBatchDto?>
 {
-    private readonly ISettlementBatchRepository _repository;
+    private readonly IMerchantSettlementBatchRepository _repository;
 
-    public GetSettlementBatchByIdQueryHandler(ISettlementBatchRepository repository)
+    public GetSettlementBatchByIdQueryHandler(IMerchantSettlementBatchRepository repository)
     {
         _repository = repository;
     }
@@ -31,7 +31,7 @@ public class GetSettlementBatchByIdQueryHandler : IRequestHandler<GetSettlementB
         return MapToDto(batch);
     }
 
-    private static SettlementBatchDto MapToDto(SettlementBatch batch)
+    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
         return new SettlementBatchDto
         {
@@ -64,7 +64,7 @@ public class GetSettlementBatchByIdQueryHandler : IRequestHandler<GetSettlementB
         };
     }
 
-    private static SettlementBatchWithDetailsDto MapToDtoWithDetails(SettlementBatch batch)
+    private static SettlementBatchWithDetailsDto MapToDtoWithDetails(MerchantSettlementBatch batch)
     {
         return new SettlementBatchWithDetailsDto
         {

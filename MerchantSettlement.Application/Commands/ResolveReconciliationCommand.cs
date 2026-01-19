@@ -10,9 +10,9 @@ public record ResolveReconciliationCommand(Guid ReconciliationId, string Notes, 
 
 public class ResolveReconciliationCommandHandler : IRequestHandler<ResolveReconciliationCommand, Result<SettlementReconciliationDto>>
 {
-    private readonly ISettlementReconciliationRepository _repository;
+    private readonly IMerchantSettlementReconciliationRepository _repository;
 
-    public ResolveReconciliationCommandHandler(ISettlementReconciliationRepository repository)
+    public ResolveReconciliationCommandHandler(IMerchantSettlementReconciliationRepository repository)
     {
         _repository = repository;
     }
@@ -33,7 +33,7 @@ public class ResolveReconciliationCommandHandler : IRequestHandler<ResolveReconc
         return MapToDto(reconciliation);
     }
 
-    private static SettlementReconciliationDto MapToDto(SettlementReconciliation reconciliation)
+    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
         return new SettlementReconciliationDto
         {

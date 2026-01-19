@@ -5,20 +5,20 @@ namespace MerchantSettlement.Domain.Services;
 /// <summary>
 /// Mutabakat servisi
 /// </summary>
-public interface IReconciliationService
+public interface IMerchantReconciliationService
 {
     /// <summary>
     /// Batch için mutabakat oluşturur
     /// </summary>
-    Task<SettlementReconciliation> CreateReconciliationAsync(
-        SettlementBatch batch,
+    Task<MerchantReconciliation> CreateReconciliationAsync(
+        MerchantSettlementBatch batch,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Raporlanan değerlerle karşılaştırma yapar
     /// </summary>
-    Task<SettlementReconciliation> ReconcileAsync(
-        SettlementReconciliation reconciliation,
+    Task<MerchantReconciliation> ReconcileAsync(
+        MerchantReconciliation reconciliation,
         decimal reportedGrossAmount,
         decimal reportedCommission,
         decimal reportedNetAmount,
@@ -29,8 +29,8 @@ public interface IReconciliationService
     /// <summary>
     /// İşlem bazlı mutabakat yapar
     /// </summary>
-    Task<IReadOnlyList<ReconciliationMismatch>> FindMismatchesAsync(
-        SettlementBatch batch,
+    Task<IReadOnlyList<MerchantReconciliationMismatch>> FindMismatchesAsync(
+        MerchantSettlementBatch batch,
         IEnumerable<ExternalTransaction> externalTransactions,
         CancellationToken cancellationToken = default);
 }

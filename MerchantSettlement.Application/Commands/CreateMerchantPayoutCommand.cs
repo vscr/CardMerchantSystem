@@ -11,11 +11,11 @@ public record CreateMerchantPayoutCommand(CreateMerchantPayoutDto Dto) : IReques
 public class CreateMerchantPayoutCommandHandler : IRequestHandler<CreateMerchantPayoutCommand, Result<MerchantPayoutDto>>
 {
     private readonly IMerchantPayoutRepository _payoutRepository;
-    private readonly ISettlementBatchRepository _batchRepository;
+    private readonly IMerchantSettlementBatchRepository _batchRepository;
 
     public CreateMerchantPayoutCommandHandler(
         IMerchantPayoutRepository payoutRepository,
-        ISettlementBatchRepository batchRepository)
+        IMerchantSettlementBatchRepository batchRepository)
     {
         _payoutRepository = payoutRepository;
         _batchRepository = batchRepository;

@@ -10,9 +10,9 @@ public record SetReportedAmountsCommand(SetReportedAmountsDto Dto, string Operat
 
 public class SetReportedAmountsCommandHandler : IRequestHandler<SetReportedAmountsCommand, Result<SettlementReconciliationDto>>
 {
-    private readonly ISettlementReconciliationRepository _repository;
+    private readonly IMerchantSettlementReconciliationRepository _repository;
 
-    public SetReportedAmountsCommandHandler(ISettlementReconciliationRepository repository)
+    public SetReportedAmountsCommandHandler(IMerchantSettlementReconciliationRepository repository)
     {
         _repository = repository;
     }
@@ -41,7 +41,7 @@ public class SetReportedAmountsCommandHandler : IRequestHandler<SetReportedAmoun
         return MapToDto(reconciliation);
     }
 
-    private static SettlementReconciliationDto MapToDto(SettlementReconciliation reconciliation)
+    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
         return new SettlementReconciliationDto
         {
