@@ -2,50 +2,59 @@
 using MediatR;
 using MerchantSettlement.Application.DTOs;
 using MerchantSettlement.Domain.Entities;
-using MerchantSettlement.Domain.Enums;
 using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Commands;
 
-public record CreateSettlementBatchCommand(CreateSettlementBatchDto Dto) : IRequest<Result<SettlementBatchDto>>;
+public record AddMerchantSettlementDetailsCommand(Guid BatchId, List<AddSettlementDetailDto> Details) : IRequest<Result<MerchantSettlementBatchDto>>;
 
-public class CreateSettlementBatchCommandHandler : IRequestHandler<CreateSettlementBatchCommand, Result<SettlementBatchDto>>
+public class AddSettlementDetailsCommandHandler : IRequestHandler<AddMerchantSettlementDetailsCommand, Result<MerchantSettlementBatchDto>>
 {
     private readonly IMerchantSettlementBatchRepository _repository;
 
-    public CreateSettlementBatchCommandHandler(IMerchantSettlementBatchRepository repository)
+    public AddSettlementDetailsCommandHandler(IMerchantSettlementBatchRepository repository)
     {
         _repository = repository;
     }
 
-    public async Task<Result<SettlementBatchDto>> Handle(CreateSettlementBatchCommand request, CancellationToken cancellationToken)
+    public async Task<Result<MerchantSettlementBatchDto>> Handle(AddMerchantSettlementDetailsCommand request, CancellationToken cancellationToken)
     {
-        var dto = request.Dto;
+        var batch = await _repository.GetByIdWithDetailsAsync(request.BatchId, cancellationToken);
+        if (batch is null)
+            return Result.Failure<MerchantSettlementBatchDto>("Batch bulunamadı");
 
-        var settlementType = Enumeration.FromId<SettlementType>(dto.SettlementTypeId);
-        if (settlementType is null)
-            return Result.Failure<SettlementBatchDto>("Geçersiz takas tipi");
+        var details = request.Details.Select(d => MerchantSettlementDetail.Create(
+            batch.Id,
+            d.TransactionId,
+            d.TransactionNumber,
+            d.TransactionType,
+            d.TransactionDate,
+            d.CardNumberMasked,
+            d.CardBrand,
+            d.TerminalId,
+            d.Amount,
+            d.CommissionRate,
+            d.CommissionAmount,
+            d.FeeAmount,
+            d.InstallmentCount,
+            d.OriginalTransactionId,
+            d.AuthorizationCode,
+            d.ReferenceNumber
+        )).ToList();
 
-        var batchResult = MerchantSettlementBatch.Create(
-            dto.MerchantId,
-            dto.MerchantName,
-            dto.PeriodStart,
-            dto.PeriodEnd,
-            settlementType);
+        var addResult = batch.AddDetails(details);
+        if (addResult.IsFailure)
+            return Result.Failure<MerchantSettlementBatchDto>(addResult.Error);
 
-        if (batchResult.IsFailure)
-            return Result.Failure<SettlementBatchDto>(batchResult.Error);
-
-        var batch = batchResult.Value!;
-        await _repository.AddAsync(batch, cancellationToken);
+        _repository.Update(batch);
         await _repository.SaveChangesAsync(cancellationToken);
 
         return MapToDto(batch);
     }
 
-    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
+    private static MerchantSettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
-        return new SettlementBatchDto
+        return new MerchantSettlementBatchDto
         {
             Id = batch.Id,
             BatchNumber = batch.BatchNumber,

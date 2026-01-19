@@ -1,6 +1,6 @@
 ﻿namespace MerchantSettlement.Application.DTOs;
 
-public class SettlementReconciliationDto
+public class MerchantSettlementReconciliationDto
 {
     public Guid Id { get; set; }
     public string ReconciliationNumber { get; set; } = null!;
@@ -35,12 +35,12 @@ public class SettlementReconciliationDto
     public DateTime CreatedAt { get; set; }
 }
 
-public class SettlementReconciliationWithMismatchesDto : SettlementReconciliationDto
+public class MerchantSettlementReconciliationWithMismatchesDto : MerchantSettlementReconciliationDto
 {
-    public List<ReconciliationMismatchDto> Mismatches { get; set; } = new();
+    public List<MerchantReconciliationMismatchDto> Mismatches { get; set; } = new();
 }
 
-public class ReconciliationMismatchDto
+public class MerchantReconciliationMismatchDto
 {
     public Guid Id { get; set; }
     public Guid ReconciliationId { get; set; }

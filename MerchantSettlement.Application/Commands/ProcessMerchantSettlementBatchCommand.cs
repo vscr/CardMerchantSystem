@@ -6,9 +6,9 @@ using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Commands;
 
-public record ProcessSettlementBatchCommand(Guid BatchId, string ProcessedBy) : IRequest<Result<SettlementBatchDto>>;
+public record ProcessMerchantSettlementBatchCommand(Guid BatchId, string ProcessedBy) : IRequest<Result<MerchantSettlementBatchDto>>;
 
-public class ProcessSettlementBatchCommandHandler : IRequestHandler<ProcessSettlementBatchCommand, Result<SettlementBatchDto>>
+public class ProcessSettlementBatchCommandHandler : IRequestHandler<ProcessMerchantSettlementBatchCommand, Result<MerchantSettlementBatchDto>>
 {
     private readonly IMerchantSettlementBatchRepository _repository;
 
@@ -17,20 +17,20 @@ public class ProcessSettlementBatchCommandHandler : IRequestHandler<ProcessSettl
         _repository = repository;
     }
 
-    public async Task<Result<SettlementBatchDto>> Handle(ProcessSettlementBatchCommand request, CancellationToken cancellationToken)
+    public async Task<Result<MerchantSettlementBatchDto>> Handle(ProcessMerchantSettlementBatchCommand request, CancellationToken cancellationToken)
     {
         var batch = await _repository.GetByIdWithDetailsAsync(request.BatchId, cancellationToken);
         if (batch is null)
-            return Result.Failure<SettlementBatchDto>("Batch bulunamadı");
+            return Result.Failure<MerchantSettlementBatchDto>("Batch bulunamadı");
 
         var startResult = batch.StartProcessing(request.ProcessedBy);
         if (startResult.IsFailure)
-            return Result.Failure<SettlementBatchDto>(startResult.Error);
+            return Result.Failure<MerchantSettlementBatchDto>(startResult.Error);
 
         // İşleme simülasyonu - gerçek senaryoda burada işlem yapılır
         var completeResult = batch.Complete(request.ProcessedBy);
         if (completeResult.IsFailure)
-            return Result.Failure<SettlementBatchDto>(completeResult.Error);
+            return Result.Failure<MerchantSettlementBatchDto>(completeResult.Error);
 
         _repository.Update(batch);
         await _repository.SaveChangesAsync(cancellationToken);
@@ -38,9 +38,9 @@ public class ProcessSettlementBatchCommandHandler : IRequestHandler<ProcessSettl
         return MapToDto(batch);
     }
 
-    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
+    private static MerchantSettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
-        return new SettlementBatchDto
+        return new MerchantSettlementBatchDto
         {
             Id = batch.Id,
             BatchNumber = batch.BatchNumber,

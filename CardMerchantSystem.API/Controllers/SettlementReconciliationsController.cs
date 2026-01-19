@@ -23,7 +23,7 @@ public class SettlementReconciliationsController : ControllerBase
     /// Çözülmemiş mutabakatları getirir
     /// </summary>
     [HttpGet("unresolved")]
-    public async Task<ActionResult<IReadOnlyList<SettlementReconciliationDto>>> GetUnresolved(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<MerchantSettlementReconciliationDto>>> GetUnresolved(CancellationToken cancellationToken)
     {
         var query = new GetUnresolvedReconciliationsQuery();
         var result = await _mediator.Send(query, cancellationToken);
@@ -34,7 +34,7 @@ public class SettlementReconciliationsController : ControllerBase
     /// ID ile mutabakat getirir
     /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<SettlementReconciliationDto>> GetById(
+    public async Task<ActionResult<MerchantSettlementReconciliationDto>> GetById(
         Guid id,
         [FromQuery] bool includeMismatches = false,
         CancellationToken cancellationToken = default)
@@ -52,11 +52,11 @@ public class SettlementReconciliationsController : ControllerBase
     /// Batch için mutabakat oluşturur
     /// </summary>
     [HttpPost("batch/{batchId:guid}")]
-    public async Task<ActionResult<SettlementReconciliationDto>> Create(
+    public async Task<ActionResult<MerchantSettlementReconciliationDto>> Create(
         Guid batchId,
         CancellationToken cancellationToken)
     {
-        var command = new CreateReconciliationCommand(batchId);
+        var command = new CreateMerchantReconciliationCommand(batchId);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
@@ -69,7 +69,7 @@ public class SettlementReconciliationsController : ControllerBase
     /// Raporlanan tutarları ayarlar
     /// </summary>
     [HttpPost("{id:guid}/set-reported-amounts")]
-    public async Task<ActionResult<SettlementReconciliationDto>> SetReportedAmounts(
+    public async Task<ActionResult<MerchantSettlementReconciliationDto>> SetReportedAmounts(
         Guid id,
         [FromBody] SetReportedAmountsDto dto,
         [FromQuery] string operatorUsername,
@@ -89,13 +89,13 @@ public class SettlementReconciliationsController : ControllerBase
     /// Mutabakatı çözer
     /// </summary>
     [HttpPost("{id:guid}/resolve")]
-    public async Task<ActionResult<SettlementReconciliationDto>> Resolve(
+    public async Task<ActionResult<MerchantSettlementReconciliationDto>> Resolve(
         Guid id,
         [FromQuery] string notes,
         [FromQuery] string operatorUsername,
         CancellationToken cancellationToken)
     {
-        var command = new ResolveReconciliationCommand(id, notes, operatorUsername);
+        var command = new ResolveMerchantReconciliationCommand(id, notes, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)

@@ -5,9 +5,9 @@ using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Queries;
 
-public record GetUnresolvedReconciliationsQuery() : IRequest<IReadOnlyList<SettlementReconciliationDto>>;
+public record GetUnresolvedReconciliationsQuery() : IRequest<IReadOnlyList<MerchantSettlementReconciliationDto>>;
 
-public class GetUnresolvedReconciliationsQueryHandler : IRequestHandler<GetUnresolvedReconciliationsQuery, IReadOnlyList<SettlementReconciliationDto>>
+public class GetUnresolvedReconciliationsQueryHandler : IRequestHandler<GetUnresolvedReconciliationsQuery, IReadOnlyList<MerchantSettlementReconciliationDto>>
 {
     private readonly IMerchantSettlementReconciliationRepository _repository;
 
@@ -16,15 +16,15 @@ public class GetUnresolvedReconciliationsQueryHandler : IRequestHandler<GetUnres
         _repository = repository;
     }
 
-    public async Task<IReadOnlyList<SettlementReconciliationDto>> Handle(GetUnresolvedReconciliationsQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<MerchantSettlementReconciliationDto>> Handle(GetUnresolvedReconciliationsQuery request, CancellationToken cancellationToken)
     {
         var reconciliations = await _repository.GetUnresolvedAsync(cancellationToken);
         return reconciliations.Select(MapToDto).ToList();
     }
 
-    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
+    private static MerchantSettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
-        return new SettlementReconciliationDto
+        return new MerchantSettlementReconciliationDto
         {
             Id = reconciliation.Id,
             ReconciliationNumber = reconciliation.ReconciliationNumber,

@@ -1,6 +1,6 @@
 ﻿namespace MerchantSettlement.Application.DTOs;
 
-public class DailySettlementSummaryDto
+public class MerchantDailySettlementSummaryDto
 {
     public Guid Id { get; set; }
     public DateTime SettlementDate { get; set; }

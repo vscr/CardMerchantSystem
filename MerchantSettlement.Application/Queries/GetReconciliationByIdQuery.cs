@@ -5,9 +5,9 @@ using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Queries;
 
-public record GetReconciliationByIdQuery(Guid Id, bool IncludeMismatches = false) : IRequest<SettlementReconciliationDto?>;
+public record GetReconciliationByIdQuery(Guid Id, bool IncludeMismatches = false) : IRequest<MerchantSettlementReconciliationDto?>;
 
-public class GetReconciliationByIdQueryHandler : IRequestHandler<GetReconciliationByIdQuery, SettlementReconciliationDto?>
+public class GetReconciliationByIdQueryHandler : IRequestHandler<GetReconciliationByIdQuery, MerchantSettlementReconciliationDto?>
 {
     private readonly IMerchantSettlementReconciliationRepository _repository;
 
@@ -16,7 +16,7 @@ public class GetReconciliationByIdQueryHandler : IRequestHandler<GetReconciliati
         _repository = repository;
     }
 
-    public async Task<SettlementReconciliationDto?> Handle(GetReconciliationByIdQuery request, CancellationToken cancellationToken)
+    public async Task<MerchantSettlementReconciliationDto?> Handle(GetReconciliationByIdQuery request, CancellationToken cancellationToken)
     {
         var reconciliation = request.IncludeMismatches
             ? await _repository.GetByIdWithMismatchesAsync(request.Id, cancellationToken)
@@ -31,9 +31,9 @@ public class GetReconciliationByIdQueryHandler : IRequestHandler<GetReconciliati
         return MapToDto(reconciliation);
     }
 
-    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
+    private static MerchantSettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
-        return new SettlementReconciliationDto
+        return new MerchantSettlementReconciliationDto
         {
             Id = reconciliation.Id,
             ReconciliationNumber = reconciliation.ReconciliationNumber,
@@ -62,9 +62,9 @@ public class GetReconciliationByIdQueryHandler : IRequestHandler<GetReconciliati
         };
     }
 
-    private static SettlementReconciliationWithMismatchesDto MapToDtoWithMismatches(MerchantReconciliation reconciliation)
+    private static MerchantSettlementReconciliationWithMismatchesDto MapToDtoWithMismatches(MerchantReconciliation reconciliation)
     {
-        return new SettlementReconciliationWithMismatchesDto
+        return new MerchantSettlementReconciliationWithMismatchesDto
         {
             Id = reconciliation.Id,
             ReconciliationNumber = reconciliation.ReconciliationNumber,
@@ -90,7 +90,7 @@ public class GetReconciliationByIdQueryHandler : IRequestHandler<GetReconciliati
             ResolvedBy = reconciliation.ResolvedBy,
             ResolvedAt = reconciliation.ResolvedAt,
             CreatedAt = reconciliation.CreatedAt,
-            Mismatches = reconciliation.Mismatches.Select(m => new ReconciliationMismatchDto
+            Mismatches = reconciliation.Mismatches.Select(m => new MerchantReconciliationMismatchDto
             {
                 Id = m.Id,
                 ReconciliationId = m.ReconciliationId,

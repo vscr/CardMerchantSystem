@@ -1,6 +1,6 @@
 ﻿namespace MerchantSettlement.Application.DTOs;
 
-public class SettlementDetailDto
+public class MerchantSettlementDetailDto
 {
     public Guid Id { get; set; }
     public Guid SettlementBatchId { get; set; }

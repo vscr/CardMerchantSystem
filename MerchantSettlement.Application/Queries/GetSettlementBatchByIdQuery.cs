@@ -5,9 +5,9 @@ using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Queries;
 
-public record GetSettlementBatchByIdQuery(Guid Id, bool IncludeDetails = false) : IRequest<SettlementBatchDto?>;
+public record GetSettlementBatchByIdQuery(Guid Id, bool IncludeDetails = false) : IRequest<MerchantSettlementBatchDto?>;
 
-public class GetSettlementBatchByIdQueryHandler : IRequestHandler<GetSettlementBatchByIdQuery, SettlementBatchDto?>
+public class GetSettlementBatchByIdQueryHandler : IRequestHandler<GetSettlementBatchByIdQuery, MerchantSettlementBatchDto?>
 {
     private readonly IMerchantSettlementBatchRepository _repository;
 
@@ -16,7 +16,7 @@ public class GetSettlementBatchByIdQueryHandler : IRequestHandler<GetSettlementB
         _repository = repository;
     }
 
-    public async Task<SettlementBatchDto?> Handle(GetSettlementBatchByIdQuery request, CancellationToken cancellationToken)
+    public async Task<MerchantSettlementBatchDto?> Handle(GetSettlementBatchByIdQuery request, CancellationToken cancellationToken)
     {
         var batch = request.IncludeDetails
             ? await _repository.GetByIdWithDetailsAsync(request.Id, cancellationToken)
@@ -31,9 +31,9 @@ public class GetSettlementBatchByIdQueryHandler : IRequestHandler<GetSettlementB
         return MapToDto(batch);
     }
 
-    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
+    private static MerchantSettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
-        return new SettlementBatchDto
+        return new MerchantSettlementBatchDto
         {
             Id = batch.Id,
             BatchNumber = batch.BatchNumber,
@@ -64,9 +64,9 @@ public class GetSettlementBatchByIdQueryHandler : IRequestHandler<GetSettlementB
         };
     }
 
-    private static SettlementBatchWithDetailsDto MapToDtoWithDetails(MerchantSettlementBatch batch)
+    private static MerchantSettlementBatchWithDetailsDto MapToDtoWithDetails(MerchantSettlementBatch batch)
     {
-        return new SettlementBatchWithDetailsDto
+        return new MerchantSettlementBatchWithDetailsDto
         {
             Id = batch.Id,
             BatchNumber = batch.BatchNumber,
@@ -94,7 +94,7 @@ public class GetSettlementBatchByIdQueryHandler : IRequestHandler<GetSettlementB
             ProcessedBy = batch.ProcessedBy,
             FailureReason = batch.FailureReason,
             CreatedAt = batch.CreatedAt,
-            Details = batch.Details.Select(d => new SettlementDetailDto
+            Details = batch.Details.Select(d => new MerchantSettlementDetailDto
             {
                 Id = d.Id,
                 SettlementBatchId = d.SettlementBatchId,

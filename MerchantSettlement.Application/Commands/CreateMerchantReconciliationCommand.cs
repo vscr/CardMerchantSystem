@@ -6,9 +6,9 @@ using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Commands;
 
-public record CreateReconciliationCommand(Guid BatchId) : IRequest<Result<SettlementReconciliationDto>>;
+public record CreateMerchantReconciliationCommand(Guid BatchId) : IRequest<Result<MerchantSettlementReconciliationDto>>;
 
-public class CreateReconciliationCommandHandler : IRequestHandler<CreateReconciliationCommand, Result<SettlementReconciliationDto>>
+public class CreateReconciliationCommandHandler : IRequestHandler<CreateMerchantReconciliationCommand, Result<MerchantSettlementReconciliationDto>>
 {
     private readonly IMerchantSettlementReconciliationRepository _reconciliationRepository;
     private readonly IMerchantSettlementBatchRepository _batchRepository;
@@ -21,16 +21,16 @@ public class CreateReconciliationCommandHandler : IRequestHandler<CreateReconcil
         _batchRepository = batchRepository;
     }
 
-    public async Task<Result<SettlementReconciliationDto>> Handle(CreateReconciliationCommand request, CancellationToken cancellationToken)
+    public async Task<Result<MerchantSettlementReconciliationDto>> Handle(CreateMerchantReconciliationCommand request, CancellationToken cancellationToken)
     {
         var batch = await _batchRepository.GetByIdAsync(request.BatchId, cancellationToken);
         if (batch is null)
-            return Result.Failure<SettlementReconciliationDto>("Batch bulunamadı");
+            return Result.Failure<MerchantSettlementReconciliationDto>("Batch bulunamadı");
 
         // Aynı batch için mevcut mutabakat var mı kontrol et
         var existingReconciliation = await _reconciliationRepository.GetByBatchIdAsync(request.BatchId, cancellationToken);
         if (existingReconciliation is not null)
-            return Result.Failure<SettlementReconciliationDto>("Bu batch için mutabakat zaten mevcut");
+            return Result.Failure<MerchantSettlementReconciliationDto>("Bu batch için mutabakat zaten mevcut");
 
         var reconciliationResult = MerchantReconciliation.Create(
             batch.Id,
@@ -43,7 +43,7 @@ public class CreateReconciliationCommandHandler : IRequestHandler<CreateReconcil
             batch.TotalTransactionCount);
 
         if (reconciliationResult.IsFailure)
-            return Result.Failure<SettlementReconciliationDto>(reconciliationResult.Error);
+            return Result.Failure<MerchantSettlementReconciliationDto>(reconciliationResult.Error);
 
         var reconciliation = reconciliationResult.Value!;
         await _reconciliationRepository.AddAsync(reconciliation, cancellationToken);
@@ -52,9 +52,9 @@ public class CreateReconciliationCommandHandler : IRequestHandler<CreateReconcil
         return MapToDto(reconciliation);
     }
 
-    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
+    private static MerchantSettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
-        return new SettlementReconciliationDto
+        return new MerchantSettlementReconciliationDto
         {
             Id = reconciliation.Id,
             ReconciliationNumber = reconciliation.ReconciliationNumber,

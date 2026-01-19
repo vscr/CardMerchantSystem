@@ -6,9 +6,9 @@ using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Commands;
 
-public record SetReportedAmountsCommand(SetReportedAmountsDto Dto, string OperatorUsername) : IRequest<Result<SettlementReconciliationDto>>;
+public record SetReportedAmountsCommand(SetReportedAmountsDto Dto, string OperatorUsername) : IRequest<Result<MerchantSettlementReconciliationDto>>;
 
-public class SetReportedAmountsCommandHandler : IRequestHandler<SetReportedAmountsCommand, Result<SettlementReconciliationDto>>
+public class SetReportedAmountsCommandHandler : IRequestHandler<SetReportedAmountsCommand, Result<MerchantSettlementReconciliationDto>>
 {
     private readonly IMerchantSettlementReconciliationRepository _repository;
 
@@ -17,13 +17,13 @@ public class SetReportedAmountsCommandHandler : IRequestHandler<SetReportedAmoun
         _repository = repository;
     }
 
-    public async Task<Result<SettlementReconciliationDto>> Handle(SetReportedAmountsCommand request, CancellationToken cancellationToken)
+    public async Task<Result<MerchantSettlementReconciliationDto>> Handle(SetReportedAmountsCommand request, CancellationToken cancellationToken)
     {
         var dto = request.Dto;
 
         var reconciliation = await _repository.GetByIdAsync(dto.ReconciliationId, cancellationToken);
         if (reconciliation is null)
-            return Result.Failure<SettlementReconciliationDto>("Mutabakat bulunamadı");
+            return Result.Failure<MerchantSettlementReconciliationDto>("Mutabakat bulunamadı");
 
         var result = reconciliation.SetReportedAmounts(
             dto.ReportedGrossAmount,
@@ -33,7 +33,7 @@ public class SetReportedAmountsCommandHandler : IRequestHandler<SetReportedAmoun
             request.OperatorUsername);
 
         if (result.IsFailure)
-            return Result.Failure<SettlementReconciliationDto>(result.Error);
+            return Result.Failure<MerchantSettlementReconciliationDto>(result.Error);
 
         _repository.Update(reconciliation);
         await _repository.SaveChangesAsync(cancellationToken);
@@ -41,9 +41,9 @@ public class SetReportedAmountsCommandHandler : IRequestHandler<SetReportedAmoun
         return MapToDto(reconciliation);
     }
 
-    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
+    private static MerchantSettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
-        return new SettlementReconciliationDto
+        return new MerchantSettlementReconciliationDto
         {
             Id = reconciliation.Id,
             ReconciliationNumber = reconciliation.ReconciliationNumber,

@@ -5,9 +5,9 @@ using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Queries;
 
-public record GetDailySettlementSummaryQuery(DateTime Date) : IRequest<DailySettlementSummaryDto?>;
+public record GetDailySettlementSummaryQuery(DateTime Date) : IRequest<MerchantDailySettlementSummaryDto?>;
 
-public class GetDailySettlementSummaryQueryHandler : IRequestHandler<GetDailySettlementSummaryQuery, DailySettlementSummaryDto?>
+public class GetDailySettlementSummaryQueryHandler : IRequestHandler<GetDailySettlementSummaryQuery, MerchantDailySettlementSummaryDto?>
 {
     private readonly IMerchantDailySettlementSummaryRepository _repository;
 
@@ -16,7 +16,7 @@ public class GetDailySettlementSummaryQueryHandler : IRequestHandler<GetDailySet
         _repository = repository;
     }
 
-    public async Task<DailySettlementSummaryDto?> Handle(GetDailySettlementSummaryQuery request, CancellationToken cancellationToken)
+    public async Task<MerchantDailySettlementSummaryDto?> Handle(GetDailySettlementSummaryQuery request, CancellationToken cancellationToken)
     {
         var summary = await _repository.GetByDateAsync(request.Date, cancellationToken);
         if (summary is null)
@@ -25,9 +25,9 @@ public class GetDailySettlementSummaryQueryHandler : IRequestHandler<GetDailySet
         return MapToDto(summary);
     }
 
-    private static DailySettlementSummaryDto MapToDto(MerchantDailySettlementSummary summary)
+    private static MerchantDailySettlementSummaryDto MapToDto(MerchantDailySettlementSummary summary)
     {
-        return new DailySettlementSummaryDto
+        return new MerchantDailySettlementSummaryDto
         {
             Id = summary.Id,
             SettlementDate = summary.SettlementDate,

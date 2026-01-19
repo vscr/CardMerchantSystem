@@ -5,9 +5,9 @@ using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Queries;
 
-public record GetPendingSettlementBatchesQuery() : IRequest<IReadOnlyList<SettlementBatchDto>>;
+public record GetPendingSettlementBatchesQuery() : IRequest<IReadOnlyList<MerchantSettlementBatchDto>>;
 
-public class GetPendingSettlementBatchesQueryHandler : IRequestHandler<GetPendingSettlementBatchesQuery, IReadOnlyList<SettlementBatchDto>>
+public class GetPendingSettlementBatchesQueryHandler : IRequestHandler<GetPendingSettlementBatchesQuery, IReadOnlyList<MerchantSettlementBatchDto>>
 {
     private readonly IMerchantSettlementBatchRepository _repository;
 
@@ -16,15 +16,15 @@ public class GetPendingSettlementBatchesQueryHandler : IRequestHandler<GetPendin
         _repository = repository;
     }
 
-    public async Task<IReadOnlyList<SettlementBatchDto>> Handle(GetPendingSettlementBatchesQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<MerchantSettlementBatchDto>> Handle(GetPendingSettlementBatchesQuery request, CancellationToken cancellationToken)
     {
         var batches = await _repository.GetPendingBatchesAsync(cancellationToken);
         return batches.Select(MapToDto).ToList();
     }
 
-    private static SettlementBatchDto MapToDto(MerchantSettlementBatch batch)
+    private static MerchantSettlementBatchDto MapToDto(MerchantSettlementBatch batch)
     {
-        return new SettlementBatchDto
+        return new MerchantSettlementBatchDto
         {
             Id = batch.Id,
             BatchNumber = batch.BatchNumber,

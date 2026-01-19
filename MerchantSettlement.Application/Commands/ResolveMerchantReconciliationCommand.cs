@@ -6,9 +6,9 @@ using MerchantSettlement.Domain.Repositories;
 
 namespace MerchantSettlement.Application.Commands;
 
-public record ResolveReconciliationCommand(Guid ReconciliationId, string Notes, string OperatorUsername) : IRequest<Result<SettlementReconciliationDto>>;
+public record ResolveMerchantReconciliationCommand(Guid ReconciliationId, string Notes, string OperatorUsername) : IRequest<Result<MerchantSettlementReconciliationDto>>;
 
-public class ResolveReconciliationCommandHandler : IRequestHandler<ResolveReconciliationCommand, Result<SettlementReconciliationDto>>
+public class ResolveReconciliationCommandHandler : IRequestHandler<ResolveMerchantReconciliationCommand, Result<MerchantSettlementReconciliationDto>>
 {
     private readonly IMerchantSettlementReconciliationRepository _repository;
 
@@ -17,15 +17,15 @@ public class ResolveReconciliationCommandHandler : IRequestHandler<ResolveReconc
         _repository = repository;
     }
 
-    public async Task<Result<SettlementReconciliationDto>> Handle(ResolveReconciliationCommand request, CancellationToken cancellationToken)
+    public async Task<Result<MerchantSettlementReconciliationDto>> Handle(ResolveMerchantReconciliationCommand request, CancellationToken cancellationToken)
     {
         var reconciliation = await _repository.GetByIdAsync(request.ReconciliationId, cancellationToken);
         if (reconciliation is null)
-            return Result.Failure<SettlementReconciliationDto>("Mutabakat bulunamadı");
+            return Result.Failure<MerchantSettlementReconciliationDto>("Mutabakat bulunamadı");
 
         var result = reconciliation.Resolve(request.Notes, request.OperatorUsername);
         if (result.IsFailure)
-            return Result.Failure<SettlementReconciliationDto>(result.Error);
+            return Result.Failure<MerchantSettlementReconciliationDto>(result.Error);
 
         _repository.Update(reconciliation);
         await _repository.SaveChangesAsync(cancellationToken);
@@ -33,9 +33,9 @@ public class ResolveReconciliationCommandHandler : IRequestHandler<ResolveReconc
         return MapToDto(reconciliation);
     }
 
-    private static SettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
+    private static MerchantSettlementReconciliationDto MapToDto(MerchantReconciliation reconciliation)
     {
-        return new SettlementReconciliationDto
+        return new MerchantSettlementReconciliationDto
         {
             Id = reconciliation.Id,
             ReconciliationNumber = reconciliation.ReconciliationNumber,

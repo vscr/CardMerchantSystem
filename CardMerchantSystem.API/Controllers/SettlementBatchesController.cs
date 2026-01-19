@@ -23,7 +23,7 @@ public class SettlementBatchesController : ControllerBase
     /// Tüm bekleyen batch'leri getirir
     /// </summary>
     [HttpGet("pending")]
-    public async Task<ActionResult<IReadOnlyList<SettlementBatchDto>>> GetPending(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<MerchantSettlementBatchDto>>> GetPending(CancellationToken cancellationToken)
     {
         var query = new GetPendingSettlementBatchesQuery();
         var result = await _mediator.Send(query, cancellationToken);
@@ -34,7 +34,7 @@ public class SettlementBatchesController : ControllerBase
     /// Merchant'a göre batch'leri getirir
     /// </summary>
     [HttpGet("by-merchant/{merchantId}")]
-    public async Task<ActionResult<IReadOnlyList<SettlementBatchDto>>> GetByMerchant(
+    public async Task<ActionResult<IReadOnlyList<MerchantSettlementBatchDto>>> GetByMerchant(
         string merchantId,
         CancellationToken cancellationToken)
     {
@@ -47,7 +47,7 @@ public class SettlementBatchesController : ControllerBase
     /// ID ile batch getirir
     /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<SettlementBatchDto>> GetById(
+    public async Task<ActionResult<MerchantSettlementBatchDto>> GetById(
         Guid id,
         [FromQuery] bool includeDetails = false,
         CancellationToken cancellationToken = default)
@@ -65,11 +65,11 @@ public class SettlementBatchesController : ControllerBase
     /// Yeni batch oluşturur
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<SettlementBatchDto>> Create(
-        [FromBody] CreateSettlementBatchDto dto,
+    public async Task<ActionResult<MerchantSettlementBatchDto>> Create(
+        [FromBody] CreateMerchantSettlementBatchDto dto,
         CancellationToken cancellationToken)
     {
-        var command = new CreateSettlementBatchCommand(dto);
+        var command = new CreateMerchantSettlementBatchCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
@@ -82,12 +82,12 @@ public class SettlementBatchesController : ControllerBase
     /// Batch'e detay ekler
     /// </summary>
     [HttpPost("{id:guid}/details")]
-    public async Task<ActionResult<SettlementBatchDto>> AddDetails(
+    public async Task<ActionResult<MerchantSettlementBatchDto>> AddDetails(
         Guid id,
         [FromBody] List<AddSettlementDetailDto> details,
         CancellationToken cancellationToken)
     {
-        var command = new AddSettlementDetailsCommand(id, details);
+        var command = new AddMerchantSettlementDetailsCommand(id, details);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
@@ -100,12 +100,12 @@ public class SettlementBatchesController : ControllerBase
     /// Batch'i işler
     /// </summary>
     [HttpPost("{id:guid}/process")]
-    public async Task<ActionResult<SettlementBatchDto>> Process(
+    public async Task<ActionResult<MerchantSettlementBatchDto>> Process(
         Guid id,
         [FromQuery] string processedBy,
         CancellationToken cancellationToken)
     {
-        var command = new ProcessSettlementBatchCommand(id, processedBy);
+        var command = new ProcessMerchantSettlementBatchCommand(id, processedBy);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)

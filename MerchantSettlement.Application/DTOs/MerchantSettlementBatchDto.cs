@@ -1,6 +1,6 @@
 ﻿namespace MerchantSettlement.Application.DTOs;
 
-public class SettlementBatchDto
+public class MerchantSettlementBatchDto
 {
     public Guid Id { get; set; }
     public string BatchNumber { get; set; } = null!;
@@ -35,12 +35,12 @@ public class SettlementBatchDto
     public DateTime CreatedAt { get; set; }
 }
 
-public class SettlementBatchWithDetailsDto : SettlementBatchDto
+public class MerchantSettlementBatchWithDetailsDto : MerchantSettlementBatchDto
 {
-    public List<SettlementDetailDto> Details { get; set; } = new();
+    public List<MerchantSettlementDetailDto> Details { get; set; } = new();
 }
 
-public class CreateSettlementBatchDto
+public class CreateMerchantSettlementBatchDto
 {
     public string MerchantId { get; set; } = null!;
     public string MerchantName { get; set; } = null!;
