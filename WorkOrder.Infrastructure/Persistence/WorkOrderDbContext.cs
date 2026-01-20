@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using WorkOrder.Domain.Entities;
 
 namespace WorkOrder.Infrastructure.Persistence;
 
@@ -8,6 +9,11 @@ public class WorkOrderDbContext : DbContext
         : base(options)
     {
     }
+
+    public DbSet<WorkOrderType> WorkOrderTypes => Set<WorkOrderType>();
+    public DbSet<WorkOrderItem> WorkOrderItems => Set<WorkOrderItem>();
+    public DbSet<WorkOrderNote> WorkOrderNotes => Set<WorkOrderNote>();
+    public DbSet<WorkOrderApproval> WorkOrderApprovals => Set<WorkOrderApproval>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

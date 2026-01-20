@@ -37,6 +37,8 @@ using Courier.Application;
 using Courier.Infrastructure;
 using EarlyBlockResolution.Application;
 using EarlyBlockResolution.Infrastructure;
+using WorkOrder.Application;
+using WorkOrder.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -140,6 +142,10 @@ builder.Services.AddCourierInfrastructure(connectionString);
 // EarlyBlockResolution Module
 builder.Services.AddEarlyBlockResolutionApplication();
 builder.Services.AddEarlyBlockResolutionInfrastructure(connectionString);
+
+// WorkOrder Module
+builder.Services.AddWorkOrderApplication();
+builder.Services.AddWorkOrderInfrastructure(connectionString);
 
 // Hangfire
 builder.Services.AddHangfire(config => config
