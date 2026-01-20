@@ -1,7 +1,62 @@
-﻿using Merchant.Application.DTOs;
-using CardMerchantSystem.Shared.Kernel;
+﻿using CardMerchantSystem.Shared.Kernel;
 using MediatR;
+using Merchant.Application.DTOs;
+using Merchant.Domain.Entities;
+using Merchant.Domain.Repositories;
 
 namespace Merchant.Application.Queries;
 
 public record GetMerchantByIdQuery(Guid Id) : IRequest<Result<MerchantDto>>;
+public class GetMerchantByIdQueryHandler
+    : IRequestHandler<GetMerchantByIdQuery, Result<MerchantDto>>
+{
+    private readonly IMerchantRepository _repository;
+
+    public GetMerchantByIdQueryHandler(IMerchantRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<Result<MerchantDto>> Handle(
+        GetMerchantByIdQuery request,
+        CancellationToken cancellationToken)
+    {
+        var merchant = await _repository.GetByIdWithTerminalsAsync(request.Id, cancellationToken);
+
+        if (merchant == null)
+            return Result.Failure<MerchantDto>("Üye işyeri bulunamadı", ErrorCodes.MerchantNotFound);
+
+        return MapToDto(merchant);
+    }
+
+    private static MerchantDto MapToDto(MerchantAggregate m)
+    {
+        return new MerchantDto
+        {
+            Id = m.Id,
+            MerchantCode = m.MerchantCode.Value,
+            Name = m.Name,
+            TradeName = m.TradeName,
+            TaxNumber = m.TaxNumber.Masked,
+            TaxOffice = m.TaxOffice,
+            MerchantType = m.MerchantType.Name,
+            Status = m.Status.Name,
+            StatusDisplayName = m.Status.DisplayName,
+            PhoneNumber = m.PhoneNumber,
+            Email = m.Email,
+            Address = m.Address,
+            City = m.City,
+            District = m.District,
+            IBAN = m.IBAN.Masked,
+            CommissionRate = m.CommissionRate,
+            ContractStartDate = m.ContractStartDate,
+            ContractEndDate = m.ContractEndDate,
+            ApprovedBy = m.ApprovedBy,
+            ApprovedAt = m.ApprovedAt,
+            RejectionReason = m.RejectionReason,
+            ActiveTerminalCount = m.ActiveTerminalCount,
+            CreatedAt = m.CreatedAt,
+            UpdatedAt = m.UpdatedAt
+        };
+    }
+}
