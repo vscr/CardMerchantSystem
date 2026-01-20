@@ -413,10 +413,6 @@ Her modül kendi DbContext'ine sahiptir ve bağımsız olarak yönetilir. Toplam
 4. Push edin (`git push origin feature/amazing-feature`)
 5. Pull Request açın
 
-## 📄 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
-
 ## 👨‍💻 Geliştirici
 
 **Volkan** - Senior .NET Developer
