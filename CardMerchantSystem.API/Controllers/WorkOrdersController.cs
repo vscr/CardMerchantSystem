@@ -7,10 +7,8 @@ using WorkOrder.Application.Queries;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class WorkOrdersController : ControllerBase
+public class WorkOrdersController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -25,44 +23,66 @@ public class WorkOrdersController : ControllerBase
         => Ok(await _mediator.Send(new GetOverdueWorkOrdersQuery(), cancellationToken));
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<WorkOrderItemDto>> GetById(Guid id, [FromQuery] bool includeDetails = false, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<WorkOrderItemDto>> GetById(
+        Guid id,
+        [FromQuery] bool includeDetails = false,
+        CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetWorkOrderByIdQuery(id, includeDetails), cancellationToken);
-        return result is null ? NotFound(new { error = "İş emri bulunamadı" }) : Ok(result);
+        return Ok(HandleNotFound(result, "İş emri", id));
     }
 
     [HttpPost]
-    public async Task<ActionResult<WorkOrderItemDto>> Create([FromBody] CreateWorkOrderItemDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<WorkOrderItemDto>> Create(
+        [FromBody] CreateWorkOrderItemDto dto,
+        CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new CreateWorkOrderItemCommand(dto), cancellationToken);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        var value = HandleResult(result);
+        return CreatedResponse(nameof(GetById), new { id = value.Id }, value);
     }
 
     [HttpPost("{id:guid}/assign")]
-    public async Task<ActionResult<WorkOrderItemDto>> Assign(Guid id, [FromBody] AssignWorkOrderDto dto, [FromQuery] string operatorUsername, CancellationToken cancellationToken)
+    public async Task<ActionResult<WorkOrderItemDto>> Assign(
+        Guid id,
+        [FromBody] AssignWorkOrderDto dto,
+        [FromQuery] string operatorUsername,
+        CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new AssignWorkOrderCommand(id, dto, operatorUsername), cancellationToken);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     [HttpPost("{id:guid}/complete")]
-    public async Task<ActionResult<WorkOrderItemDto>> Complete(Guid id, [FromQuery] string resolution, [FromQuery] string completedBy, CancellationToken cancellationToken)
+    public async Task<ActionResult<WorkOrderItemDto>> Complete(
+        Guid id,
+        [FromQuery] string resolution,
+        [FromQuery] string completedBy,
+        CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new CompleteWorkOrderCommand(id, resolution, completedBy), cancellationToken);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     [HttpPost("{id:guid}/notes")]
-    public async Task<ActionResult<WorkOrderNoteDto>> AddNote(Guid id, [FromBody] AddNoteDto dto, [FromQuery] string createdBy, CancellationToken cancellationToken)
+    public async Task<ActionResult<WorkOrderNoteDto>> AddNote(
+        Guid id,
+        [FromBody] AddNoteDto dto,
+        [FromQuery] string createdBy,
+        CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new AddWorkOrderNoteCommand(id, dto, createdBy), cancellationToken);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     [HttpPost("{id:guid}/process-approval")]
-    public async Task<ActionResult<WorkOrderItemDto>> ProcessApproval(Guid id, [FromBody] ProcessApprovalDto dto, [FromQuery] string operatorUsername, CancellationToken cancellationToken)
+    public async Task<ActionResult<WorkOrderItemDto>> ProcessApproval(
+        Guid id,
+        [FromBody] ProcessApprovalDto dto,
+        [FromQuery] string operatorUsername,
+        CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new ProcessApprovalCommand(id, dto, operatorUsername), cancellationToken);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 }
