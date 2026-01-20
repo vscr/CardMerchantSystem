@@ -55,6 +55,9 @@
     <ProjectReference Include="..\MerchantSettlement.Application\MerchantSettlement.Application.csproj" />
     <ProjectReference Include="..\MerchantSettlement.Domain\MerchantSettlement.Domain.csproj" />
     <ProjectReference Include="..\MerchantSettlement.Infrastructure\MerchantSettlement.Infrastructure.csproj" />
+    <ProjectReference Include="..\RegulatoryReporting.Application\RegulatoryReporting.Application.csproj" />
+    <ProjectReference Include="..\RegulatoryReporting.Domain\RegulatoryReporting.Domain.csproj" />
+    <ProjectReference Include="..\RegulatoryReporting.Infrastructure\RegulatoryReporting.Infrastructure.csproj" />
     <ProjectReference Include="..\Statement.Application\Statement.Application.csproj" />
     <ProjectReference Include="..\Statement.Domain\Statement.Domain.csproj" />
     <ProjectReference Include="..\Statement.Infrastructure\Statement.Infrastructure.csproj" />

@@ -31,6 +31,8 @@ using MerchantSettlement.Infrastructure;
 using MerchantSettlement.Application;
 using BulkCardPrint.Application;
 using BulkCardPrint.Infrastructure;
+using RegulatoryReporting.Application;
+using RegulatoryReporting.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -122,6 +124,10 @@ builder.Services.AddMerchantSettlementInfrastructure(connectionString);
 // BulkCardPrint Module
 builder.Services.AddBulkCardPrintApplication();
 builder.Services.AddBulkCardPrintInfrastructure(connectionString);
+
+// RegulatoryReporting Module
+builder.Services.AddRegulatoryReportingApplication();
+builder.Services.AddRegulatoryReportingInfrastructure(connectionString);
 
 // Hangfire
 builder.Services.AddHangfire(config => config
