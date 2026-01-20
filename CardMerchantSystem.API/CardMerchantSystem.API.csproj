@@ -70,6 +70,9 @@
     <ProjectReference Include="..\Transaction.Application\Transaction.Application.csproj" />
     <ProjectReference Include="..\Transaction.Domain\Transaction.Domain.csproj" />
     <ProjectReference Include="..\Transaction.Infrastructure\Transaction.Infrastructure.csproj" />
+    <ProjectReference Include="..\WorkOrder.Application\WorkOrder.Application.csproj" />
+    <ProjectReference Include="..\WorkOrder.Domain\WorkOrder.Domain.csproj" />
+    <ProjectReference Include="..\WorkOrder.Infrastructure\WorkOrder.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
