@@ -35,6 +35,8 @@ using RegulatoryReporting.Application;
 using RegulatoryReporting.Infrastructure;
 using Courier.Application;
 using Courier.Infrastructure;
+using EarlyBlockResolution.Application;
+using EarlyBlockResolution.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -134,6 +136,10 @@ builder.Services.AddRegulatoryReportingInfrastructure(connectionString);
 // Courier Module
 builder.Services.AddCourierApplication();
 builder.Services.AddCourierInfrastructure(connectionString);
+
+// EarlyBlockResolution Module
+builder.Services.AddEarlyBlockResolutionApplication();
+builder.Services.AddEarlyBlockResolutionInfrastructure(connectionString);
 
 // Hangfire
 builder.Services.AddHangfire(config => config

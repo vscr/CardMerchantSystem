@@ -43,6 +43,9 @@
     <ProjectReference Include="..\Dispute.Application\Dispute.Application.csproj" />
     <ProjectReference Include="..\Dispute.Domain\Dispute.Domain.csproj" />
     <ProjectReference Include="..\Dispute.Infrastructure\Dispute.Infrastructure.csproj" />
+    <ProjectReference Include="..\EarlyBlockResolution.Application\EarlyBlockResolution.Application.csproj" />
+    <ProjectReference Include="..\EarlyBlockResolution.Domain\EarlyBlockResolution.Domain.csproj" />
+    <ProjectReference Include="..\EarlyBlockResolution.Infrastructure\EarlyBlockResolution.Infrastructure.csproj" />
     <ProjectReference Include="..\Fee.Application\Fee.Application.csproj" />
     <ProjectReference Include="..\Fee.Domain\Fee.Domain.csproj" />
     <ProjectReference Include="..\Fee.Infrastructure\Fee.Infrastructure.csproj" />
