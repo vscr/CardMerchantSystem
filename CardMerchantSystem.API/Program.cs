@@ -1,3 +1,4 @@
+using CardMerchantSystem.API.Middleware;
 using Card.Application;
 using Card.Infrastructure;
 using Merchant.Application;
@@ -211,6 +212,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// Global Exception Handler
+app.UseGlobalExceptionHandler();
 
 // Configure pipeline
 if (app.Environment.IsDevelopment())
