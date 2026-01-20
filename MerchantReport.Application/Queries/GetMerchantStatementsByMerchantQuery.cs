@@ -1,6 +1,38 @@
-﻿using MerchantReport.Application.DTOs;
-using MediatR;
+﻿using MediatR;
+using MerchantReport.Application.DTOs;
+using MerchantReport.Domain.Repositories;
 
 namespace MerchantReport.Application.Queries;
 
 public record GetMerchantStatementsByMerchantQuery(string MerchantId) : IRequest<IReadOnlyList<MerchantStatementSummaryDto>>;
+public class GetMerchantStatementsByMerchantQueryHandler
+    : IRequestHandler<GetMerchantStatementsByMerchantQuery, IReadOnlyList<MerchantStatementSummaryDto>>
+{
+    private readonly IMerchantStatementRepository _repository;
+
+    public GetMerchantStatementsByMerchantQueryHandler(IMerchantStatementRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<IReadOnlyList<MerchantStatementSummaryDto>> Handle(
+        GetMerchantStatementsByMerchantQuery request,
+        CancellationToken cancellationToken)
+    {
+        var statements = await _repository.GetByMerchantIdAsync(request.MerchantId, cancellationToken);
+
+        return statements.Select(s => new MerchantStatementSummaryDto
+        {
+            Id = s.Id,
+            StatementNumber = s.StatementNumber,
+            MerchantName = s.MerchantName,
+            PeriodStart = s.PeriodStart,
+            PeriodEnd = s.PeriodEnd,
+            TotalSales = s.TotalSales,
+            TotalCommission = s.TotalCommission,
+            ClosingBalance = s.ClosingBalance,
+            SalesCount = s.SalesCount,
+            CreatedAt = s.CreatedAt
+        }).ToList();
+    }
+}
