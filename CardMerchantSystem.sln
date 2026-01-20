@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.2.11408.102 d18.0
+VisualStudioVersion = 18.2.11408.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
@@ -121,6 +121,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MerchantSettlement.Application", "MerchantSettlement.Application\MerchantSettlement.Application.csproj", "{F9DB24FE-CA47-4D57-AFC9-6D45398DA32E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MerchantSettlement.Infrastructure", "MerchantSettlement.Infrastructure\MerchantSettlement.Infrastructure.csproj", "{54062E2E-4C91-4554-9347-6E1B0E4524AC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BulkCardPrint", "BulkCardPrint", "{4B9A80F7-83DF-4E3C-A077-99A30515D04B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BulkCardPrint.Domain", "BulkCardPrint.Domain\BulkCardPrint.Domain.csproj", "{4A7EE777-3F8D-4A8A-B2C7-ECE9CCC099EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BulkCardPrint.Application", "BulkCardPrint.Application\BulkCardPrint.Application.csproj", "{54737EA6-754C-4A71-9EDC-3A5410109CC3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BulkCardPrint.Infrastructure", "BulkCardPrint.Infrastructure\BulkCardPrint.Infrastructure.csproj", "{31930880-6377-449C-A5B1-8577CF4A937F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -284,6 +292,18 @@ Global
 		{54062E2E-4C91-4554-9347-6E1B0E4524AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{54062E2E-4C91-4554-9347-6E1B0E4524AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{54062E2E-4C91-4554-9347-6E1B0E4524AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A7EE777-3F8D-4A8A-B2C7-ECE9CCC099EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A7EE777-3F8D-4A8A-B2C7-ECE9CCC099EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A7EE777-3F8D-4A8A-B2C7-ECE9CCC099EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A7EE777-3F8D-4A8A-B2C7-ECE9CCC099EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54737EA6-754C-4A71-9EDC-3A5410109CC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54737EA6-754C-4A71-9EDC-3A5410109CC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54737EA6-754C-4A71-9EDC-3A5410109CC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54737EA6-754C-4A71-9EDC-3A5410109CC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31930880-6377-449C-A5B1-8577CF4A937F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31930880-6377-449C-A5B1-8577CF4A937F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31930880-6377-449C-A5B1-8577CF4A937F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31930880-6377-449C-A5B1-8577CF4A937F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -344,6 +364,10 @@ Global
 		{A07CCFE9-DCF2-4163-BDD7-0A6BFF2F09F2} = {9EE03479-3A5D-4D6C-8E76-642DE48A6E57}
 		{F9DB24FE-CA47-4D57-AFC9-6D45398DA32E} = {9EE03479-3A5D-4D6C-8E76-642DE48A6E57}
 		{54062E2E-4C91-4554-9347-6E1B0E4524AC} = {9EE03479-3A5D-4D6C-8E76-642DE48A6E57}
+		{4B9A80F7-83DF-4E3C-A077-99A30515D04B} = {E0E282A4-1A8A-484E-9FD0-5777F3CC5EEC}
+		{4A7EE777-3F8D-4A8A-B2C7-ECE9CCC099EF} = {4B9A80F7-83DF-4E3C-A077-99A30515D04B}
+		{54737EA6-754C-4A71-9EDC-3A5410109CC3} = {4B9A80F7-83DF-4E3C-A077-99A30515D04B}
+		{31930880-6377-449C-A5B1-8577CF4A937F} = {4B9A80F7-83DF-4E3C-A077-99A30515D04B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5E3ACEE6-E796-4CEB-88A9-4FC34DA7FE95}
