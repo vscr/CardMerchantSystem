@@ -33,6 +33,8 @@ using BulkCardPrint.Application;
 using BulkCardPrint.Infrastructure;
 using RegulatoryReporting.Application;
 using RegulatoryReporting.Infrastructure;
+using Courier.Application;
+using Courier.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -128,6 +130,10 @@ builder.Services.AddBulkCardPrintInfrastructure(connectionString);
 // RegulatoryReporting Module
 builder.Services.AddRegulatoryReportingApplication();
 builder.Services.AddRegulatoryReportingInfrastructure(connectionString);
+
+// Courier Module
+builder.Services.AddCourierApplication();
+builder.Services.AddCourierInfrastructure(connectionString);
 
 // Hangfire
 builder.Services.AddHangfire(config => config
