@@ -28,6 +28,8 @@ Card Merchant System, bankaların ve finansal kuruluşların kart operasyonları
 - **Finansal Operasyonlar**: Ekstre, muhasebe, komisyon hesaplama
 - **Güvenlik**: HSM entegrasyonu, PIN/CVV yönetimi
 - **Entegrasyonlar**: BKM Switch, ISO 8583
+- **Raporlama**: Yasal raporlar, üye işyeri raporları
+- **Toplu İşlemler**: Toplu kart basım, batch işleme
 
 ## 🏗 Mimari
 
@@ -35,31 +37,38 @@ Proje **Clean Architecture** ve **Modüler Monolith** yaklaşımı ile tasarlanm
 ```
 CardMerchantSystem/
 ├── src/
-│   ├── CardMerchantSystem.API/          # REST API Layer
-│   ├── CardMerchantSystem.Shared/       # Shared Kernel
+│   ├── API/
+│   │   └── CardMerchantSystem.API/          # REST API Layer
+│   ├── Shared/
+│   │   └── CardMerchantSystem.Shared.Kernel # Shared Kernel (Entity, ValueObject, Result)
+│   ├── Infrastructure/                       # Ortak altyapı bileşenleri
 │   └── Modules/
-│       ├── Card/                        # Kart Modülü
-│       │   ├── Card.Domain
-│       │   ├── Card.Application
-│       │   └── Card.Infrastructure
-│       ├── Merchant/                    # Üye İşyeri Modülü
-│       ├── Transaction/                 # İşlem Modülü
-│       ├── Dispute/                     # İtiraz Modülü
-│       ├── Campaign/                    # Kampanya Modülü
-│       ├── BKM/                         # BKM Switch Modülü
-│       ├── HSM/                         # HSM Modülü
-│       ├── Fee/                         # Ücret Yönetimi Modülü
-│       ├── Statement/                   # Ekstre Modülü
-│       └── Accounting/                  # Muhasebe Modülü
+│       ├── Accounting/                       # Muhasebe Modülü
+│       │   ├── Accounting.Domain
+│       │   ├── Accounting.Application
+│       │   └── Accounting.Infrastructure
+│       ├── BKM/                              # BKM Switch Modülü
+│       ├── BulkCardPrint/                    # Toplu Kart Basım Modülü
+│       ├── Campaign/                         # Kampanya Modülü
+│       ├── Card/                             # Kart Modülü
+│       ├── Dispute/                          # İtiraz Modülü
+│       ├── Fee/                              # Ücret Yönetimi Modülü
+│       ├── HSM/                              # HSM Modülü
+│       ├── Merchant/                         # Üye İşyeri Modülü
+│       ├── MerchantReport/                   # Üye İşyeri Raporlama Modülü
+│       ├── MerchantSettlement/               # Üye İşyeri Takas Modülü
+│       ├── RegulatoryReporting/              # Yasal Raporlama Modülü
+│       ├── Statement/                        # Ekstre Modülü
+│       └── Transaction/                      # İşlem Modülü
 └── tests/
-    └── CardMerchantSystem.Tests/        # Unit & Integration Tests
+    └── CardMerchantSystem.Tests/             # Unit & Integration Tests
 ```
 
 ### Katmanlar
 
 | Katman | Sorumluluk |
 |--------|------------|
-| **Domain** | Entity, Value Object, Domain Event, Repository Interface |
+| **Domain** | Entity, Value Object, Domain Event, Repository Interface, Enumeration |
 | **Application** | CQRS (Command/Query), DTO, Validator, Handler |
 | **Infrastructure** | DbContext, Repository Implementation, External Services |
 | **API** | Controller, Middleware, Authentication |
@@ -136,14 +145,44 @@ CardMerchantSystem/
 - Mizan raporu
 - Otomatik muhasebeleştirme
 
+### 11. 📈 MerchantReport (Üye İşyeri Raporlama)
+- Üye işyeri bazlı raporlar
+- İşlem özeti raporları
+- Komisyon raporları
+- PDF/Excel çıktı
+
+### 12. 🔄 MerchantSettlement (Üye İşyeri Takas)
+- Günsonu kapama
+- Takas hesaplama
+- Hakediş hesaplama (komisyon kesintisi)
+- Ödeme planı
+- Banka mutabakatı
+- Settlement raporları
+
+### 13. 🖨️ BulkCardPrint (Toplu Kart Basım)
+- Basım batch'i oluşturma
+- Kart üreticisine dosya üretimi
+- Vendor entegrasyonu (FTP/API)
+- Basım durumu takibi
+- Kalite kontrol süreçleri
+
+### 14. 📋 RegulatoryReporting (Yasal Raporlama)
+- BDDK raporları
+- TCMB raporları
+- SPK raporları
+- MASAK raporları
+- BKM raporları
+- Otomatik rapor üretimi ve zamanlama
+- Rapor gönderim takibi
+
 ## 🛠 Teknolojiler
 
 ### Backend
 - **.NET 8** - Framework
 - **ASP.NET Core Web API** - REST API
 - **Entity Framework Core 8** - ORM
-- **MediatR** - CQRS Pattern
-- **FluentValidation** - Validation
+- **MediatR 12.2** - CQRS Pattern
+- **FluentValidation 11.9** - Validation
 - **Hangfire** - Background Jobs
 
 ### Veritabanı & Cache
@@ -210,17 +249,21 @@ dotnet ef database update --context HSMDbContext
 dotnet ef database update --context FeeDbContext
 dotnet ef database update --context StatementDbContext
 dotnet ef database update --context AccountingDbContext
+dotnet ef database update --context MerchantReportDbContext
+dotnet ef database update --context MerchantSettlementDbContext
+dotnet ef database update --context BulkCardPrintDbContext
+dotnet ef database update --context RegulatoryReportingDbContext
 ```
 
 4. **Uygulamayı çalıştırın**
 ```bash
-cd src/CardMerchantSystem.API
+cd src/API/CardMerchantSystem.API
 dotnet run
 ```
 
 5. **Swagger UI'a erişin**
 ```
-https://localhost:7001/swagger
+https://localhost:7202/swagger
 ```
 
 ## 📚 API Dokümantasyonu
@@ -279,17 +322,28 @@ Content-Type: application/json
 }
 ```
 
-#### Komisyon Hesaplama
+#### Yasal Rapor Üretimi
 ```http
-POST /api/Fee/calculate-commission
+POST /api/GeneratedReports/generate
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "merchantId": "M001",
-  "transactionAmount": 1000,
-  "mcc": "5812",
-  "installmentCount": 3
+  "reportDefinitionId": "guid",
+  "periodStart": "2025-01-01",
+  "periodEnd": "2025-01-31"
+}
+```
+
+#### Toplu Kart Basım Batch'i Oluşturma
+```http
+POST /api/PrintBatches
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "printVendorId": "guid",
+  "cardApplicationIds": ["guid1", "guid2", "guid3"]
 }
 ```
 
@@ -304,15 +358,19 @@ Content-Type: application/json
 | Transaction | Transactions, Settlements |
 | Dispute | Disputes, DisputeDocuments, DisputeNotes |
 | Campaign | Campaigns, CampaignRules, CampaignUsages |
-| BKM | BKMMessages, BINTables, ClearingRecords, SettlementRecords |
+| BKM | BKMMessages, BINTables, ClearingRecords, SettlementBatches, BankSettlementSummaries |
 | HSM | HSMCommands, CryptoKeys |
 | Fee | Tariffs, TariffRules, MerchantTariffs, FeeAccruals, MembershipFees, CommissionBreakdowns |
 | Statement | CardStatements, StatementItems, StatementNotifications, StatementPeriodConfigs |
 | Accounting | ChartOfAccounts, AccountingPeriods, JournalEntries, JournalEntryLines, AccountBalances |
+| MerchantReport | MerchantReports, MerchantReportItems |
+| MerchantSettlement | MerchantSettlementBatches, MerchantSettlementDetails, MerchantPayouts, MerchantReconciliations, MerchantReconciliationMismatches, DailySettlementSummaries |
+| BulkCardPrint | PrintVendors, PrintBatches, PrintBatchItems |
+| RegulatoryReporting | ReportDefinitions, ReportSchedules, GeneratedReports, ReportSubmissions |
 
 ### ER Diagram
 
-Her modül kendi DbContext'ine sahiptir ve bağımsız olarak yönetilir.
+Her modül kendi DbContext'ine sahiptir ve bağımsız olarak yönetilir. Toplam **14 ayrı DbContext** mevcuttur.
 
 ## 🔒 Güvenlik
 
@@ -321,17 +379,31 @@ Her modül kendi DbContext'ine sahiptir ve bağımsız olarak yönetilir.
 - **HSM Integration**: Kritik kriptografik işlemler HSM üzerinde gerçekleştirilir
 - **Input Validation**: FluentValidation ile tüm girdiler doğrulanır
 
+## ✅ Tamamlanan Modüller
+
+- [x] Kart Yönetimi (Card)
+- [x] Üye İşyeri Yönetimi (Merchant)
+- [x] İşlem Yönetimi (Transaction)
+- [x] İtiraz Yönetimi (Dispute)
+- [x] Kampanya Yönetimi (Campaign)
+- [x] BKM Switch Entegrasyonu (BKM)
+- [x] HSM Entegrasyonu (HSM)
+- [x] Ücret Yönetimi (Fee)
+- [x] Ekstre Yönetimi (Statement)
+- [x] Muhasebe Yönetimi (Accounting)
+- [x] Üye İşyeri Raporlama (MerchantReport)
+- [x] Üye İşyeri Takas (MerchantSettlement)
+- [x] Toplu Kart Basım (BulkCardPrint)
+- [x] Yasal Raporlama (RegulatoryReporting)
+
 ## 📈 Planlanan Özellikler
 
-- [ ] Üye İşyeri Ekstre/Raporlama
-- [ ] Günsonu Muhasebe İşlemleri
-- [ ] Toplu Kart Basım (Bileşim/Austuria)
-- [ ] Yasal Raporlamalar (BDDK, TCMB, BKM)
 - [ ] Kurye Entegrasyonu (Kuryenet)
 - [ ] Erken Bloke Çözüm
 - [ ] İş Emri Yönetimi
 - [ ] Anında Kart Basım (Evolis)
 - [ ] Envanter Yönetimi
+- [ ] React Frontend Paneli
 
 ## 🤝 Katkıda Bulunma
 
@@ -347,8 +419,18 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 ## 👨‍💻 Geliştirici
 
-**Volkan** - .NET Developer
+**Volkan** - Senior .NET Developer
 
 ---
 
 ⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
+
+## 📊 Proje İstatistikleri
+
+| Metrik | Değer |
+|--------|-------|
+| Toplam Proje | 45 |
+| Modül Sayısı | 14 |
+| DbContext Sayısı | 14 |
+| API Controller Sayısı | 25+ |
+| Entity Sayısı | 60+ |
