@@ -28,8 +28,7 @@ public class TransactionsController : ApiControllerBase
         var command = new ProcessTransactionCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        var value = HandleResult(result);
-        return CreatedResponse(nameof(GetById), new { id = value.Id }, value);
+        return Ok(HandleResult(result));
     }
 
     /// <summary>

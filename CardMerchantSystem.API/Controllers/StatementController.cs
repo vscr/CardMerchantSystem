@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class StatementController : ControllerBase
+public class StatementController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -32,10 +30,8 @@ public class StatementController : ControllerBase
         var command = new CreateStatementCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetStatementById), new { id = result.Value!.Id }, result.Value);
+        var value = HandleResult(result);
+        return CreatedResponse(nameof(GetStatementById), new { id = value.Id }, value);
     }
 
     /// <summary>
@@ -49,10 +45,7 @@ public class StatementController : ControllerBase
         var command = new AddStatementItemCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     /// <summary>
@@ -66,10 +59,7 @@ public class StatementController : ControllerBase
         var command = new GenerateStatementCommand(id);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     /// <summary>
@@ -83,10 +73,7 @@ public class StatementController : ControllerBase
         var query = new GetStatementByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     /// <summary>
@@ -131,10 +118,7 @@ public class StatementController : ControllerBase
         var command = new RecordStatementPaymentCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     #endregion
@@ -152,10 +136,8 @@ public class StatementController : ControllerBase
         var command = new GeneratePdfCommand(id);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return File(result.Value!, "application/pdf", $"Statement_{id}.pdf");
+        var value = HandleResult(result);
+        return File(value, "application/pdf", $"Statement_{id}.pdf");
     }
 
     #endregion
@@ -173,10 +155,8 @@ public class StatementController : ControllerBase
         var command = new CreateStatementPeriodConfigCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetPeriodConfig), new { cardNumber = dto.CardNumber }, result.Value);
+        var value = HandleResult(result);
+        return CreatedResponse(nameof(GetPeriodConfig), new { cardNumber = dto.CardNumber }, value);
     }
 
     /// <summary>
@@ -190,10 +170,7 @@ public class StatementController : ControllerBase
         var query = new GetStatementPeriodConfigQuery(cardNumber);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     #endregion
