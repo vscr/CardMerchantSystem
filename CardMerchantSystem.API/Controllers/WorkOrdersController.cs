@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using CardMerchantSystem.API.Auth.Constants;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkOrder.Application.Commands;
@@ -7,7 +8,7 @@ using WorkOrder.Application.Queries;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[Authorize]
+[Authorize(Policy = Policies.WorkOrderManagement)]
 public class WorkOrdersController : ApiControllerBase
 {
     private readonly IMediator _mediator;
