@@ -13,6 +13,7 @@ using CardMerchantSystem.API.Auth.Persistence;
 using CardMerchantSystem.API.Auth.Services;
 using CardMerchantSystem.API.Jobs;
 using CardMerchantSystem.API.Middleware;
+using CardMerchantSystem.API.Services;
 using Courier.Application;
 using Courier.Infrastructure;
 using Dispute.Application;
@@ -136,6 +137,9 @@ builder.Services.AddCors(options =>
 // Auth Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Dashboard Service
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Card Module
 builder.Services.AddCardApplication();
