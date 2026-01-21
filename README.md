@@ -1,420 +1,212 @@
-# 💳 Card Merchant System
+# Card Merchant System
 
-Kurumsal düzeyde bir **Kart ve Üye İşyeri Yönetim Sistemi** - .NET 8, Clean Architecture ve Domain-Driven Design (DDD) prensipleri ile geliştirilmiştir.
+Bankacılık sektörü için kapsamlı Kart ve Üye İşyeri Yönetim Sistemi.
 
-![.NET 8](https://img.shields.io/badge/.NET-8.0-purple)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture-blue)
-![DDD](https://img.shields.io/badge/Pattern-Domain%20Driven%20Design-orange)
+---
 
-## 📋 İçindekiler
-
-- [Proje Hakkında](#-proje-hakkında)
-- [Mimari](#-mimari)
-- [Modüller](#-modüller)
-- [Teknolojiler](#-teknolojiler)
-- [Kurulum](#-kurulum)
-- [API Dokümantasyonu](#-api-dokümantasyonu)
-- [Veritabanı Şeması](#-veritabanı-şeması)
-- [Katkıda Bulunma](#-katkıda-bulunma)
-
-## 🎯 Proje Hakkında
-
-Card Merchant System, bankaların ve finansal kuruluşların kart operasyonlarını yönetmek için tasarlanmış kapsamlı bir backend sistemidir. Sistem şu temel işlevleri destekler:
-
-- **Kart Yaşam Döngüsü Yönetimi**: Başvuru, onay, basım, teslimat
-- **Üye İşyeri Yönetimi**: Kayıt, terminal atama, komisyon yönetimi
-- **İşlem Yönetimi**: Satış, iade, provizyon, takas
-- **Finansal Operasyonlar**: Ekstre, muhasebe, komisyon hesaplama
-- **Güvenlik**: HSM entegrasyonu, PIN/CVV yönetimi
-- **Entegrasyonlar**: BKM Switch, ISO 8583
-- **Raporlama**: Yasal raporlar, üye işyeri raporları
-- **Toplu İşlemler**: Toplu kart basım, batch işleme
-
-## 🏗 Mimari
-
-Proje **Clean Architecture** ve **Modüler Monolith** yaklaşımı ile tasarlanmıştır:
-```
-CardMerchantSystem/
-├── src/
-│   ├── API/
-│   │   └── CardMerchantSystem.API/          # REST API Layer
-│   ├── Shared/
-│   │   └── CardMerchantSystem.Shared.Kernel # Shared Kernel (Entity, ValueObject, Result)
-│   ├── Infrastructure/                       # Ortak altyapı bileşenleri
-│   └── Modules/
-│       ├── Accounting/                       # Muhasebe Modülü
-│       │   ├── Accounting.Domain
-│       │   ├── Accounting.Application
-│       │   └── Accounting.Infrastructure
-│       ├── BKM/                              # BKM Switch Modülü
-│       ├── BulkCardPrint/                    # Toplu Kart Basım Modülü
-│       ├── Campaign/                         # Kampanya Modülü
-│       ├── Card/                             # Kart Modülü
-│       ├── Dispute/                          # İtiraz Modülü
-│       ├── Fee/                              # Ücret Yönetimi Modülü
-│       ├── HSM/                              # HSM Modülü
-│       ├── Merchant/                         # Üye İşyeri Modülü
-│       ├── MerchantReport/                   # Üye İşyeri Raporlama Modülü
-│       ├── MerchantSettlement/               # Üye İşyeri Takas Modülü
-│       ├── RegulatoryReporting/              # Yasal Raporlama Modülü
-│       ├── Statement/                        # Ekstre Modülü
-│       └── Transaction/                      # İşlem Modülü
-└── tests/
-    └── CardMerchantSystem.Tests/             # Unit & Integration Tests
-```
-
-### Katmanlar
-
-| Katman | Sorumluluk |
-|--------|------------|
-| **Domain** | Entity, Value Object, Domain Event, Repository Interface, Enumeration |
-| **Application** | CQRS (Command/Query), DTO, Validator, Handler |
-| **Infrastructure** | DbContext, Repository Implementation, External Services |
-| **API** | Controller, Middleware, Authentication |
-
-## 📦 Modüller
-
-### 1. 💳 Card (Kart Yönetimi)
-- Kart başvurusu ve onay süreçleri
-- Kart durumu yönetimi (Aktif, Blokeli, İptal)
-- Kart basım ve teslimat takibi
-- Durum geçmişi
-
-### 2. 🏪 Merchant (Üye İşyeri Yönetimi)
-- Üye işyeri kaydı ve yönetimi
-- Terminal atama ve yönetimi
-- MCC (Merchant Category Code) yönetimi
-- Aktivasyon/Deaktivasyon
-
-### 3. 💰 Transaction (İşlem Yönetimi)
-- Satış ve iade işlemleri
-- LKS (Limit Kontrol Sistemi) - Redis
-- Fraud detection
-- Settlement (Takas)
-- Provizyon yönetimi
-
-### 4. 📝 Dispute (İtiraz Yönetimi)
-- İtiraz yaşam döngüsü
-- Belge yönetimi
-- Not ekleme
-- Chargeback süreçleri
-
-### 5. 🎁 Campaign (Kampanya Yönetimi)
-- İndirim kampanyaları
-- Puan kampanyaları
-- Kural motoru
-- Bütçe takibi
-- Kullanım limitleri
-
-### 6. 🔄 BKM (BKM Switch Entegrasyonu)
-- ISO 8583 mesaj işleme
-- Authorization
-- Clearing
-- Settlement
-- BIN tablosu yönetimi
-
-### 7. 🔐 HSM (Hardware Security Module)
-- Thales PayShield / Gemalto SafeNet desteği
-- PIN işlemleri (Generate, Verify, Change, Translate)
-- CVV işlemleri (Generate, Verify)
-- Key yönetimi (ZMK, ZPK, TMK, TPK)
-- Şifreleme/Deşifreleme
-- MAC hesaplama
-
-### 8. 💵 Fee (Ücret Yönetimi)
-- Tarife yönetimi
-- Komisyon hesaplama motoru
-- MCC/Taksit/Hacim bazlı kurallar
-- Aidat yönetimi
-- Tahakkuk ve ödeme takibi
-
-### 9. 📄 Statement (Ekstre Yönetimi)
-- Ekstre oluşturma
-- PDF üretimi (QuestPDF)
-- Faiz hesaplama
-- Minimum ödeme hesaplama
-- E-posta/SMS bildirimi
-- Ödeme takibi
-
-### 10. 📊 Accounting (Muhasebe Yönetimi)
-- Hesap planı
-- Muhasebe fişi (Journal Entry)
-- Çift taraflı kayıt sistemi
-- Dönem yönetimi
-- Mizan raporu
-- Otomatik muhasebeleştirme
-
-### 11. 📈 MerchantReport (Üye İşyeri Raporlama)
-- Üye işyeri bazlı raporlar
-- İşlem özeti raporları
-- Komisyon raporları
-- PDF/Excel çıktı
-
-### 12. 🔄 MerchantSettlement (Üye İşyeri Takas)
-- Günsonu kapama
-- Takas hesaplama
-- Hakediş hesaplama (komisyon kesintisi)
-- Ödeme planı
-- Banka mutabakatı
-- Settlement raporları
-
-### 13. 🖨️ BulkCardPrint (Toplu Kart Basım)
-- Basım batch'i oluşturma
-- Kart üreticisine dosya üretimi
-- Vendor entegrasyonu (FTP/API)
-- Basım durumu takibi
-- Kalite kontrol süreçleri
-
-### 14. 📋 RegulatoryReporting (Yasal Raporlama)
-- BDDK raporları
-- TCMB raporları
-- SPK raporları
-- MASAK raporları
-- BKM raporları
-- Otomatik rapor üretimi ve zamanlama
-- Rapor gönderim takibi
-
-## 🛠 Teknolojiler
-
-### Backend
-- **.NET 8** - Framework
-- **ASP.NET Core Web API** - REST API
-- **Entity Framework Core 8** - ORM
-- **MediatR 12.2** - CQRS Pattern
-- **FluentValidation 11.9** - Validation
-- **Hangfire** - Background Jobs
-
-### Veritabanı & Cache
-- **SQL Server** - Ana veritabanı
-- **Redis** - LKS Cache
-
-### Güvenlik
-- **JWT Bearer** - Authentication
-- **BCrypt** - Password Hashing
-- **HSM Integration** - Cryptographic Operations
-
-### Dokümantasyon & Test
-- **Swagger/OpenAPI** - API Documentation
-- **xUnit** - Unit Testing
-- **Moq** - Mocking
-
-### PDF & Raporlama
-- **QuestPDF** - PDF Generation
-
-## 🚀 Kurulum
+## 🚀 Hızlı Başlangıç
 
 ### Gereksinimler
 
 - .NET 8 SDK
-- SQL Server 2019+
-- Redis (opsiyonel - LKS için)
-- Visual Studio 2022 veya VS Code
+- SQL Server (LocalDB veya Express)
+- Redis (opsiyonel - Transaction modülü için)
+- Visual Studio 2022
 
-### Adımlar
+### Kurulum
 
-1. **Repository'yi klonlayın**
-```bash
-git clone https://github.com/yourusername/CardMerchantSystem.git
-cd CardMerchantSystem
+1. Repository'yi klonla
+2. `appsettings.json` dosyasındaki connection string'i güncelle
+3. Migration'ları uygula:
+```powershell
+# Tüm DbContext'ler için
+Update-Database -Context CardDbContext
+Update-Database -Context MerchantDbContext
+Update-Database -Context TransactionDbContext
+Update-Database -Context DisputeDbContext
+Update-Database -Context CampaignDbContext
+Update-Database -Context BKMDbContext
+Update-Database -Context HSMDbContext
+Update-Database -Context FeeDbContext
+Update-Database -Context StatementDbContext
+Update-Database -Context AccountingDbContext
+Update-Database -Context MerchantReportDbContext
+Update-Database -Context MerchantSettlementDbContext
+Update-Database -Context BulkCardPrintDbContext
+Update-Database -Context RegulatoryReportingDbContext
+Update-Database -Context CourierDbContext
+Update-Database -Context EarlyBlockResolutionDbContext
+Update-Database -Context WorkOrderDbContext
+Update-Database -Context AuthDbContext
 ```
 
-2. **Veritabanı bağlantı ayarlarını yapın**
+4. Projeyi çalıştır: `F5` veya `dotnet run`
+5. Swagger: `https://localhost:7202/swagger`
 
-`appsettings.json` dosyasını düzenleyin:
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=CardMerchantDb;Trusted_Connection=True;TrustServerCertificate=True;",
-    "Redis": "localhost:6379"
-  },
-  "Jwt": {
-    "Secret": "YourSuperSecretKeyHere123456789012",
-    "Issuer": "CardMerchantSystem",
-    "Audience": "CardMerchantSystem"
-  }
-}
+### Test Kullanıcıları
+
+| Username | Password | Rol |
+|----------|----------|-----|
+| admin | Admin123! | Admin |
+| callcenter | Test123! | CallCenterAgent |
+
+---
+
+## 📊 Proje Durumu
+
+**Backend Modülleri:** 17/19 tamamlandı (%89)
+**Mimari Geliştirmeler:** 2/5 tamamlandı (%40)
+
+> Detaylı durum için: [PROJECT_STATUS.md](PROJECT_STATUS.md)
+
+---
+
+## 🏗️ Mimari
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        API Layer                            │
+│              (Controllers, Middleware, Auth)                │
+├─────────────────────────────────────────────────────────────┤
+│                    Application Layer                        │
+│               (Commands, Queries, DTOs)                     │
+├─────────────────────────────────────────────────────────────┤
+│                      Domain Layer                           │
+│            (Entities, Enums, Repositories)                  │
+├─────────────────────────────────────────────────────────────┤
+│                   Infrastructure Layer                      │
+│           (DbContext, EF Configurations)                    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-3. **Migration'ları çalıştırın**
-```bash
-# Her modül için migration
-dotnet ef database update --context CardDbContext
-dotnet ef database update --context MerchantDbContext
-dotnet ef database update --context TransactionDbContext
-dotnet ef database update --context DisputeDbContext
-dotnet ef database update --context CampaignDbContext
-dotnet ef database update --context BKMDbContext
-dotnet ef database update --context HSMDbContext
-dotnet ef database update --context FeeDbContext
-dotnet ef database update --context StatementDbContext
-dotnet ef database update --context AccountingDbContext
-dotnet ef database update --context MerchantReportDbContext
-dotnet ef database update --context MerchantSettlementDbContext
-dotnet ef database update --context BulkCardPrintDbContext
-dotnet ef database update --context RegulatoryReportingDbContext
-```
+### Kullanılan Pattern'ler
 
-4. **Uygulamayı çalıştırın**
-```bash
-cd src/API/CardMerchantSystem.API
-dotnet run
-```
+- **Clean Architecture** - Katmanlı mimari
+- **CQRS** - Command Query Responsibility Segregation
+- **Mediator** - MediatR ile request/handler
+- **Repository** - Veri erişim soyutlama
+- **Enumeration** - Type-safe enum'lar
 
-5. **Swagger UI'a erişin**
-```
-https://localhost:7202/swagger
-```
+---
 
-## 📚 API Dokümantasyonu
+## 📦 Modüller
 
-### Authentication
-```http
-POST /api/Auth/login
-Content-Type: application/json
+### Tamamlanan (17)
 
-{
-  "username": "admin",
-  "password": "admin123"
-}
-```
-
-Response:
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiration": "2025-01-15T12:00:00Z",
-  "username": "admin"
-}
-```
-
-### Örnek API Çağrıları
-
-#### Kart Başvurusu
-```http
-POST /api/CardApplications
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "customerName": "Ahmet Yılmaz",
-  "customerIdentityNumber": "12345678901",
-  "customerEmail": "ahmet@example.com",
-  "customerPhone": "5551234567",
-  "cardTypeId": 1,
-  "requestedLimit": 10000
-}
-```
-
-#### İşlem Oluşturma
-```http
-POST /api/Transactions
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "cardNumber": "4539980000000001",
-  "merchantId": "M001",
-  "terminalId": "T001",
-  "amount": 150.50,
-  "transactionTypeId": 1,
-  "installmentCount": 1
-}
-```
-
-#### Yasal Rapor Üretimi
-```http
-POST /api/GeneratedReports/generate
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "reportDefinitionId": "guid",
-  "periodStart": "2025-01-01",
-  "periodEnd": "2025-01-31"
-}
-```
-
-#### Toplu Kart Basım Batch'i Oluşturma
-```http
-POST /api/PrintBatches
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "printVendorId": "guid",
-  "cardApplicationIds": ["guid1", "guid2", "guid3"]
-}
-```
-
-## 🗄 Veritabanı Şeması
-
-### Ana Tablolar
-
-| Modül | Tablolar |
+| Modül | Açıklama |
 |-------|----------|
-| Card | Cards, CardApplications, CardStatusHistories, CardPrintQueues, CardDeliveries |
-| Merchant | Merchants, Terminals |
-| Transaction | Transactions, Settlements |
-| Dispute | Disputes, DisputeDocuments, DisputeNotes |
-| Campaign | Campaigns, CampaignRules, CampaignUsages |
-| BKM | BKMMessages, BINTables, ClearingRecords, SettlementBatches, BankSettlementSummaries |
-| HSM | HSMCommands, CryptoKeys |
-| Fee | Tariffs, TariffRules, MerchantTariffs, FeeAccruals, MembershipFees, CommissionBreakdowns |
-| Statement | CardStatements, StatementItems, StatementNotifications, StatementPeriodConfigs |
-| Accounting | ChartOfAccounts, AccountingPeriods, JournalEntries, JournalEntryLines, AccountBalances |
-| MerchantReport | MerchantReports, MerchantReportItems |
-| MerchantSettlement | MerchantSettlementBatches, MerchantSettlementDetails, MerchantPayouts, MerchantReconciliations, MerchantReconciliationMismatches, DailySettlementSummaries |
-| BulkCardPrint | PrintVendors, PrintBatches, PrintBatchItems |
-| RegulatoryReporting | ReportDefinitions, ReportSchedules, GeneratedReports, ReportSubmissions |
+| Card | Kart yönetimi, başvuru, limit |
+| Merchant | Üye işyeri, terminal, komisyon |
+| Transaction | İşlem, provizyon, takas |
+| Dispute | İtiraz yönetimi |
+| Campaign | Kampanya, kural motoru |
+| BKM | Switch entegrasyonu |
+| HSM | Güvenlik modülü |
+| Fee | Ücret yönetimi |
+| Statement | Ekstre yönetimi |
+| Accounting | Muhasebe entegrasyonu |
+| MerchantReport | Üye işyeri raporlama |
+| MerchantSettlement | Üye işyeri takas |
+| BulkCardPrint | Toplu kart basım |
+| RegulatoryReporting | Yasal raporlama (BDDK/TCMB) |
+| Courier | Kurye entegrasyonu |
+| EarlyBlockResolution | Erken bloke çözüm |
+| WorkOrder | İş emri yönetimi |
 
-### ER Diagram
+### Planlanan (2)
 
-Her modül kendi DbContext'ine sahiptir ve bağımsız olarak yönetilir. Toplam **14 ayrı DbContext** mevcuttur.
+| Modül | Açıklama | Öncelik |
+|-------|----------|---------|
+| InstantCardPrint | Anında kart basım | Düşük |
+| Inventory | Envanter yönetimi | Düşük |
 
-## 🔒 Güvenlik
+---
 
-- **JWT Authentication**: Tüm API endpoint'leri JWT ile korunmaktadır
-- **Password Hashing**: BCrypt algoritması kullanılmaktadır
-- **HSM Integration**: Kritik kriptografik işlemler HSM üzerinde gerçekleştirilir
-- **Input Validation**: FluentValidation ile tüm girdiler doğrulanır
+## 🔐 Yetkilendirme
 
-## ✅ Tamamlanan Modüller
+### Roller
 
-- [x] Kart Yönetimi (Card)
-- [x] Üye İşyeri Yönetimi (Merchant)
-- [x] İşlem Yönetimi (Transaction)
-- [x] İtiraz Yönetimi (Dispute)
-- [x] Kampanya Yönetimi (Campaign)
-- [x] BKM Switch Entegrasyonu (BKM)
-- [x] HSM Entegrasyonu (HSM)
-- [x] Ücret Yönetimi (Fee)
-- [x] Ekstre Yönetimi (Statement)
-- [x] Muhasebe Yönetimi (Accounting)
-- [x] Üye İşyeri Raporlama (MerchantReport)
-- [x] Üye İşyeri Takas (MerchantSettlement)
-- [x] Toplu Kart Basım (BulkCardPrint)
-- [x] Yasal Raporlama (RegulatoryReporting)
+| Rol | Açıklama |
+|-----|----------|
+| Admin | Tüm yetkiler |
+| CardOperator | Kart operasyonları |
+| MerchantOperator | Üye işyeri operasyonları |
+| FinanceOperator | Finans işlemleri |
+| ComplianceOfficer | Uyum ve yasal raporlama |
+| CallCenterAgent | Çağrı merkezi |
+| Viewer | Sadece görüntüleme |
 
-## 📈 Planlanan Özellikler
+### Policy Kullanımı
+```csharp
+[Authorize(Policy = Policies.CardManagement)]
+public class CardsController : ApiControllerBase
+```
 
-- [ ] Kurye Entegrasyonu (Kuryenet)
-- [ ] Erken Bloke Çözüm
-- [ ] İş Emri Yönetimi
-- [ ] Anında Kart Basım (Evolis)
-- [ ] Envanter Yönetimi
-- [ ] React Frontend Paneli
+---
 
-## 👨‍💻 Geliştirici
+## 🛠️ Teknolojiler
 
-**Volkan** - .NET Developer
+| Kategori | Teknoloji |
+|----------|-----------|
+| Framework | .NET 8 |
+| ORM | Entity Framework Core 8 |
+| Veritabanı | SQL Server |
+| Cache | Redis |
+| Jobs | Hangfire |
+| Auth | JWT + BCrypt |
+| Validation | FluentValidation |
+| Mediator | MediatR 12 |
 
-## 📊 Proje İstatistikleri
+---
 
-| Metrik | Değer |
-|--------|-------|
-| Toplam Proje | 45 |
-| Modül Sayısı | 14 |
-| DbContext Sayısı | 14 |
-| API Controller Sayısı | 25+ |
-| Entity Sayısı | 60+ |
+## 📁 Klasör Yapısı
+```
+CardMerchantSystem/
+├── src/
+│   ├── CardMerchantSystem.API/
+│   ├── CardMerchantSystem.Shared/
+│   └── Modules/
+│       ├── Card/
+│       ├── Merchant/
+│       ├── Transaction/
+│       └── ... (17 modül)
+└── tests/
+```
+
+---
+
+## 📝 Geliştirici Notları
+
+### Controller Oluşturma
+```csharp
+[Authorize(Policy = Policies.XxxManagement)]
+public class XxxController : ApiControllerBase
+{
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<XxxDto>> GetById(Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetXxxByIdQuery(id), ct);
+        return Ok(HandleNotFound(result, "Xxx", id));
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<XxxDto>> Create([FromBody] CreateXxxDto dto, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new CreateXxxCommand(dto), ct);
+        var value = HandleResult(result);
+        return CreatedResponse(nameof(GetById), new { id = value.Id }, value);
+    }
+}
+```
+
+### Exception Kullanımı
+```csharp
+throw new NotFoundException("Entity", id);
+throw new BusinessRuleException("Hata mesajı");
+throw new ConflictException("Kayıt zaten mevcut");
+```
+
+---
+
+## 📄 Lisans
+
+Bu proje eğitim amaçlıdır.
