@@ -24,7 +24,6 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
         var response = await _authService.LoginAsync(request);
-
         if (response == null)
             return Unauthorized(new { error = "Geçersiz kullanıcı adı veya şifre" });
 
@@ -39,12 +38,10 @@ public class AuthController : ControllerBase
     public async Task<ActionResult> GetCurrentUser()
     {
         var username = User.Identity?.Name;
-
         if (string.IsNullOrEmpty(username))
             return Unauthorized();
 
         var user = await _authService.GetUserByUsernameAsync(username);
-
         if (user == null)
             return NotFound();
 
@@ -52,8 +49,9 @@ public class AuthController : ControllerBase
         {
             user.Id,
             user.Username,
+            user.Email,
             user.FullName,
-            user.Role
+            user.Roles
         });
     }
 }

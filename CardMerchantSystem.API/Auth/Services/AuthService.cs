@@ -1,90 +1,112 @@
-﻿using CardMerchantSystem.API.Auth.Models;
+﻿using CardMerchantSystem.API.Auth.Entities;
+using CardMerchantSystem.API.Auth.Enums;
+using CardMerchantSystem.API.Auth.Models;
+using CardMerchantSystem.API.Auth.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace CardMerchantSystem.API.Auth.Services;
 
 public class AuthService : IAuthService
 {
+    private readonly AuthDbContext _context;
     private readonly IJwtService _jwtService;
 
-    // Demo kullanıcıları - Production'da veritabanından gelecek
-    private static readonly List<User> _users = new()
+    public AuthService(AuthDbContext context, IJwtService jwtService)
     {
-        new User
-        {
-            Id = 1,
-            Username = "admin",
-            PasswordHash = HashPassword("admin123"),
-            Role = Roles.Admin,
-            FullName = "Sistem Yöneticisi",
-            IsActive = true
-        },
-        new User
-        {
-            Id = 2,
-            Username = "operator",
-            PasswordHash = HashPassword("operator123"),
-            Role = Roles.Operator,
-            FullName = "Operatör Kullanıcı",
-            IsActive = true
-        },
-        new User
-        {
-            Id = 3,
-            Username = "viewer",
-            PasswordHash = HashPassword("viewer123"),
-            Role = Roles.Viewer,
-            FullName = "Görüntüleyici Kullanıcı",
-            IsActive = true
-        }
-    };
-
-    public AuthService(IJwtService jwtService)
-    {
+        _context = context;
         _jwtService = jwtService;
     }
 
-    public Task<LoginResponse?> LoginAsync(LoginRequest request)
+    public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
-        var user = _users.FirstOrDefault(u =>
-            u.Username == request.Username &&
-            u.IsActive);
+        var userEntity = await _context.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive);
 
-        if (user == null)
-            return Task.FromResult<LoginResponse?>(null);
+        if (userEntity == null)
+            return null;
 
-        if (!VerifyPassword(request.Password, user.PasswordHash))
-            return Task.FromResult<LoginResponse?>(null);
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, userEntity.PasswordHash))
+            return null;
 
+        // Son giriş zamanını güncelle
+        userEntity.LastLoginAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        var user = MapToModel(userEntity);
         var token = _jwtService.GenerateToken(user);
 
-        var response = new LoginResponse
+        return new LoginResponse
         {
             Token = token,
             Username = user.Username,
-            Role = user.Role,
+            Email = user.Email,
+            FullName = user.FullName,
+            Roles = user.Roles,
             ExpiresAt = DateTime.UtcNow.AddHours(8)
         };
-
-        return Task.FromResult<LoginResponse?>(response);
     }
 
-    public Task<User?> GetUserByUsernameAsync(string username)
+    public async Task<User?> GetUserByUsernameAsync(string username)
     {
-        var user = _users.FirstOrDefault(u => u.Username == username && u.IsActive);
-        return Task.FromResult(user);
+        var userEntity = await _context.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Username == username && u.IsActive);
+
+        return userEntity == null ? null : MapToModel(userEntity);
     }
 
-    private static string HashPassword(string password)
+    public async Task<bool> CreateUserAsync(string username, string email, string password, string fullName, List<string> roles)
     {
-        // Basit hash - Production'da BCrypt kullanılacak
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
-        var bytes = System.Text.Encoding.UTF8.GetBytes(password);
-        var hash = sha256.ComputeHash(bytes);
-        return Convert.ToBase64String(hash);
+        // Kullanıcı adı veya email kontrolü
+        var exists = await _context.Users.AnyAsync(u => u.Username == username || u.Email == email);
+        if (exists)
+            return false;
+
+        var userEntity = new UserEntity
+        {
+            Id = Guid.NewGuid(),
+            Username = username,
+            Email = email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+            FullName = fullName,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _context.Users.AddAsync(userEntity);
+
+        // Rolleri ekle
+        foreach (var roleName in roles)
+        {
+            if (Enum.TryParse<SystemRole>(roleName, out var systemRole))
+            {
+                userEntity.UserRoles.Add(new UserRoleEntity
+                {
+                    UserId = userEntity.Id,
+                    RoleId = (int)systemRole,
+                    AssignedAt = DateTime.UtcNow,
+                    AssignedBy = "System"
+                });
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    private static bool VerifyPassword(string password, string hash)
+    private static User MapToModel(UserEntity entity)
     {
-        return HashPassword(password) == hash;
+        return new User
+        {
+            Id = entity.Id,
+            Username = entity.Username,
+            Email = entity.Email,
+            FullName = entity.FullName,
+            IsActive = entity.IsActive,
+            Roles = entity.UserRoles.Select(ur => ur.Role.Name).ToList()
+        };
     }
 }

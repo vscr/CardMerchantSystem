@@ -1,43 +1,46 @@
-using CardMerchantSystem.API.Middleware;
-using Card.Application;
-using Card.Infrastructure;
-using Merchant.Application;
-using Merchant.Infrastructure;
-using Transaction.Application;
-using Transaction.Infrastructure;
-using Dispute.Application;
-using Dispute.Infrastructure;
-using Campaign.Application;
-using Campaign.Infrastructure;
-using BKM.Application;
-using BKM.Infrastructure;
-using HSM.Application;
-using HSM.Infrastructure;
-using CardMerchantSystem.API.Auth.Services;
-using CardMerchantSystem.API.Jobs;
-using Hangfire;
-using Hangfire.SqlServer;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Fee.Application;
-using Fee.Infrastructure;
-using Statement.Application;
-using Statement.Infrastructure;
 using Accounting.Application;
 using Accounting.Infrastructure;
-using MerchantReport.Application;
-using MerchantReport.Infrastructure;
-using MerchantSettlement.Infrastructure;
-using MerchantSettlement.Application;
+using BKM.Application;
+using BKM.Infrastructure;
 using BulkCardPrint.Application;
 using BulkCardPrint.Infrastructure;
-using RegulatoryReporting.Application;
-using RegulatoryReporting.Infrastructure;
+using Campaign.Application;
+using Campaign.Infrastructure;
+using Card.Application;
+using Card.Infrastructure;
+using CardMerchantSystem.API.Auth.Constants;
+using CardMerchantSystem.API.Auth.Persistence;
+using CardMerchantSystem.API.Auth.Services;
+using CardMerchantSystem.API.Jobs;
+using CardMerchantSystem.API.Middleware;
 using Courier.Application;
 using Courier.Infrastructure;
+using Dispute.Application;
+using Dispute.Infrastructure;
 using EarlyBlockResolution.Application;
 using EarlyBlockResolution.Infrastructure;
+using Fee.Application;
+using Fee.Infrastructure;
+using Hangfire;
+using Hangfire.SqlServer;
+using HSM.Application;
+using HSM.Infrastructure;
+using Merchant.Application;
+using Merchant.Infrastructure;
+using MerchantReport.Application;
+using MerchantReport.Infrastructure;
+using MerchantSettlement.Application;
+using MerchantSettlement.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using RegulatoryReporting.Application;
+using RegulatoryReporting.Infrastructure;
+using Statement.Application;
+using Statement.Infrastructure;
+using System.Text;
+using Transaction.Application;
+using Transaction.Infrastructure;
 using WorkOrder.Application;
 using WorkOrder.Infrastructure;
 
@@ -74,7 +77,49 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Admin Only
+    options.AddPolicy(Policies.AdminOnly, policy =>
+        policy.RequireRole(RoleNames.Admin));
+
+    // Viewer veya üstü (herkes)
+    options.AddPolicy(Policies.ViewerOrAbove, policy =>
+        policy.RequireRole(
+            RoleNames.Admin, RoleNames.CardOperator, RoleNames.MerchantOperator,
+            RoleNames.FinanceOperator, RoleNames.ComplianceOfficer,
+            RoleNames.CallCenterAgent, RoleNames.Viewer));
+
+    // Kart Yönetimi
+    options.AddPolicy(Policies.CardManagement, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.CardOperator));
+
+    // Üye Ýþyeri Yönetimi
+    options.AddPolicy(Policies.MerchantManagement, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.MerchantOperator));
+
+    // Finans Yönetimi
+    options.AddPolicy(Policies.FinanceManagement, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.FinanceOperator));
+
+    // Uyum Yönetimi
+    options.AddPolicy(Policies.ComplianceManagement, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.ComplianceOfficer));
+
+    // Çaðrý Merkezi Eriþimi
+    options.AddPolicy(Policies.CallCenterAccess, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.CardOperator, RoleNames.CallCenterAgent));
+
+    // Ýþ Emri Yönetimi
+    options.AddPolicy(Policies.WorkOrderManagement, policy =>
+        policy.RequireRole(
+            RoleNames.Admin, RoleNames.CardOperator, RoleNames.MerchantOperator,
+            RoleNames.FinanceOperator, RoleNames.CallCenterAgent));
+});
+
+// Auth DbContext
+builder.Services.AddDbContext<AuthDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 // Auth Services
 builder.Services.AddScoped<IJwtService, JwtService>();
