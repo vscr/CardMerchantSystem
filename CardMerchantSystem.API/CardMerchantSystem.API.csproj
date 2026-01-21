@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.9" />
     <PackageReference Include="Hangfire.Core" Version="1.8.9" />
     <PackageReference Include="Hangfire.SqlServer" Version="1.8.9" />
@@ -43,6 +44,9 @@
     <ProjectReference Include="..\Dispute.Application\Dispute.Application.csproj" />
     <ProjectReference Include="..\Dispute.Domain\Dispute.Domain.csproj" />
     <ProjectReference Include="..\Dispute.Infrastructure\Dispute.Infrastructure.csproj" />
+    <ProjectReference Include="..\EarlyBlockResolution.Application\EarlyBlockResolution.Application.csproj" />
+    <ProjectReference Include="..\EarlyBlockResolution.Domain\EarlyBlockResolution.Domain.csproj" />
+    <ProjectReference Include="..\EarlyBlockResolution.Infrastructure\EarlyBlockResolution.Infrastructure.csproj" />
     <ProjectReference Include="..\Fee.Application\Fee.Application.csproj" />
     <ProjectReference Include="..\Fee.Domain\Fee.Domain.csproj" />
     <ProjectReference Include="..\Fee.Infrastructure\Fee.Infrastructure.csproj" />
@@ -67,6 +71,9 @@
     <ProjectReference Include="..\Transaction.Application\Transaction.Application.csproj" />
     <ProjectReference Include="..\Transaction.Domain\Transaction.Domain.csproj" />
     <ProjectReference Include="..\Transaction.Infrastructure\Transaction.Infrastructure.csproj" />
+    <ProjectReference Include="..\WorkOrder.Application\WorkOrder.Application.csproj" />
+    <ProjectReference Include="..\WorkOrder.Domain\WorkOrder.Domain.csproj" />
+    <ProjectReference Include="..\WorkOrder.Infrastructure\WorkOrder.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

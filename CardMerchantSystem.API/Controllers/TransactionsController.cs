@@ -7,10 +7,8 @@ using Transaction.Application.Queries;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class TransactionsController : ControllerBase
+public class TransactionsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -30,10 +28,7 @@ public class TransactionsController : ControllerBase
         var command = new ProcessTransactionCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     /// <summary>
@@ -49,10 +44,7 @@ public class TransactionsController : ControllerBase
         var command = new RefundTransactionCommand(originalTransactionId, amount, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     /// <summary>
@@ -66,10 +58,7 @@ public class TransactionsController : ControllerBase
         var query = new GetTransactionByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     /// <summary>
@@ -97,10 +86,7 @@ public class TransactionsController : ControllerBase
         var query = new GetCardLimitQuery(cardNumberMasked);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 
     /// <summary>
@@ -114,9 +100,6 @@ public class TransactionsController : ControllerBase
         var command = new SettleTransactionsCommand(batchNumber);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return Ok(HandleResult(result));
     }
 }

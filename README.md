@@ -405,25 +405,9 @@ Her modül kendi DbContext'ine sahiptir ve bağımsız olarak yönetilir. Toplam
 - [ ] Envanter Yönetimi
 - [ ] React Frontend Paneli
 
-## 🤝 Katkıda Bulunma
-
-1. Fork edin
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Commit edin (`git commit -m 'Add some amazing feature'`)
-4. Push edin (`git push origin feature/amazing-feature`)
-5. Pull Request açın
-
-## 📄 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
-
 ## 👨‍💻 Geliştirici
 
-**Volkan** - Senior .NET Developer
-
----
-
-⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
+**Volkan** - .NET Developer
 
 ## 📊 Proje İstatistikleri
 

@@ -1,40 +1,48 @@
-using Card.Application;
-using Card.Infrastructure;
-using Merchant.Application;
-using Merchant.Infrastructure;
-using Transaction.Application;
-using Transaction.Infrastructure;
-using Dispute.Application;
-using Dispute.Infrastructure;
-using Campaign.Application;
-using Campaign.Infrastructure;
-using BKM.Application;
-using BKM.Infrastructure;
-using HSM.Application;
-using HSM.Infrastructure;
-using CardMerchantSystem.API.Auth.Services;
-using CardMerchantSystem.API.Jobs;
-using Hangfire;
-using Hangfire.SqlServer;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Fee.Application;
-using Fee.Infrastructure;
-using Statement.Application;
-using Statement.Infrastructure;
 using Accounting.Application;
 using Accounting.Infrastructure;
-using MerchantReport.Application;
-using MerchantReport.Infrastructure;
-using MerchantSettlement.Infrastructure;
-using MerchantSettlement.Application;
+using BKM.Application;
+using BKM.Infrastructure;
 using BulkCardPrint.Application;
 using BulkCardPrint.Infrastructure;
-using RegulatoryReporting.Application;
-using RegulatoryReporting.Infrastructure;
+using Campaign.Application;
+using Campaign.Infrastructure;
+using Card.Application;
+using Card.Infrastructure;
+using CardMerchantSystem.API.Auth.Constants;
+using CardMerchantSystem.API.Auth.Persistence;
+using CardMerchantSystem.API.Auth.Services;
+using CardMerchantSystem.API.Jobs;
+using CardMerchantSystem.API.Middleware;
 using Courier.Application;
 using Courier.Infrastructure;
+using Dispute.Application;
+using Dispute.Infrastructure;
+using EarlyBlockResolution.Application;
+using EarlyBlockResolution.Infrastructure;
+using Fee.Application;
+using Fee.Infrastructure;
+using Hangfire;
+using Hangfire.SqlServer;
+using HSM.Application;
+using HSM.Infrastructure;
+using Merchant.Application;
+using Merchant.Infrastructure;
+using MerchantReport.Application;
+using MerchantReport.Infrastructure;
+using MerchantSettlement.Application;
+using MerchantSettlement.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using RegulatoryReporting.Application;
+using RegulatoryReporting.Infrastructure;
+using Statement.Application;
+using Statement.Infrastructure;
+using System.Text;
+using Transaction.Application;
+using Transaction.Infrastructure;
+using WorkOrder.Application;
+using WorkOrder.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,9 +77,49 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddAuthorization(options =>
+{
+    // Admin Only
+    options.AddPolicy(Policies.AdminOnly, policy =>
+        policy.RequireRole(RoleNames.Admin));
 
+    // Viewer veya üstü (herkes)
+    options.AddPolicy(Policies.ViewerOrAbove, policy =>
+        policy.RequireRole(
+            RoleNames.Admin, RoleNames.CardOperator, RoleNames.MerchantOperator,
+            RoleNames.FinanceOperator, RoleNames.ComplianceOfficer,
+            RoleNames.CallCenterAgent, RoleNames.Viewer));
 
-builder.Services.AddAuthorization();
+    // Kart Yönetimi
+    options.AddPolicy(Policies.CardManagement, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.CardOperator));
+
+    // Üye Ýþyeri Yönetimi
+    options.AddPolicy(Policies.MerchantManagement, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.MerchantOperator));
+
+    // Finans Yönetimi
+    options.AddPolicy(Policies.FinanceManagement, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.FinanceOperator));
+
+    // Uyum Yönetimi
+    options.AddPolicy(Policies.ComplianceManagement, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.ComplianceOfficer));
+
+    // Çaðrý Merkezi Eriþimi
+    options.AddPolicy(Policies.CallCenterAccess, policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.CardOperator, RoleNames.CallCenterAgent));
+
+    // Ýþ Emri Yönetimi
+    options.AddPolicy(Policies.WorkOrderManagement, policy =>
+        policy.RequireRole(
+            RoleNames.Admin, RoleNames.CardOperator, RoleNames.MerchantOperator,
+            RoleNames.FinanceOperator, RoleNames.CallCenterAgent));
+});
+
+// Auth DbContext
+builder.Services.AddDbContext<AuthDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 // CORS
 builder.Services.AddCors(options =>
@@ -149,6 +197,14 @@ builder.Services.AddRegulatoryReportingInfrastructure(connectionString);
 builder.Services.AddCourierApplication();
 builder.Services.AddCourierInfrastructure(connectionString);
 
+// EarlyBlockResolution Module
+builder.Services.AddEarlyBlockResolutionApplication();
+builder.Services.AddEarlyBlockResolutionInfrastructure(connectionString);
+
+// WorkOrder Module
+builder.Services.AddWorkOrderApplication();
+builder.Services.AddWorkOrderInfrastructure(connectionString);
+
 // Hangfire
 builder.Services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -213,6 +269,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// Global Exception Handler
+app.UseGlobalExceptionHandler();
 
 // Configure pipeline
 if (app.Environment.IsDevelopment())
