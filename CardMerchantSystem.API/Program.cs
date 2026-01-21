@@ -138,6 +138,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Menu Service
+builder.Services.AddScoped<IMenuService, MenuService>();
+
 // Dashboard Service
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
