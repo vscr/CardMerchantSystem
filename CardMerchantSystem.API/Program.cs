@@ -144,6 +144,9 @@ builder.Services.AddScoped<IMenuService, MenuService>();
 // User Service
 builder.Services.AddScoped<IUserService, UserService>();
 
+// Role Service
+builder.Services.AddScoped<IRoleService, RoleService>();
+
 // Dashboard Service
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
