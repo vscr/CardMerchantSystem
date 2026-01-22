@@ -141,6 +141,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Menu Service
 builder.Services.AddScoped<IMenuService, MenuService>();
 
+// User Service
+builder.Services.AddScoped<IUserService, UserService>();
+
 // Dashboard Service
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 

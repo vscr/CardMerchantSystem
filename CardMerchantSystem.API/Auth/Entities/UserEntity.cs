@@ -9,6 +9,7 @@ public class UserEntity
     public string FullName { get; set; } = null!;
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
 
     // Navigation
