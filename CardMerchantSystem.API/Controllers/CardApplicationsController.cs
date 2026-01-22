@@ -1,16 +1,16 @@
 ﻿using Card.Application.Commands;
 using Card.Application.DTOs;
 using Card.Application.Queries;
+using CardMerchantSystem.API.Auth.Constants;
+using CardMerchantSystem.Shared.Kernel;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-[Authorize]
-public class CardApplicationsController : ControllerBase
+[Authorize(Policy = Policies.CardManagement)]
+public class CardApplicationsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -20,15 +20,54 @@ public class CardApplicationsController : ControllerBase
     }
 
     /// <summary>
-    /// Tüm başvuruları getirir
+    /// Başvuruları sayfalı listeler
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<CardApplicationDto>>> GetAll(
+    public async Task<ActionResult<PagedResponse<CardApplicationDto>>> GetPaged(
+        [FromQuery] CardApplicationFilterDto filter,
         CancellationToken cancellationToken)
     {
-        var query = new GetAllCardApplicationsQuery();
+        var query = new GetCardApplicationsPagedQuery(filter);
         var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
 
+    /// <summary>
+    /// ID ile başvuru getirir
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<CardApplicationDto>> GetById(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetCardApplicationByIdQuery(id);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(HandleResult(result));
+    }
+
+    /// <summary>
+    /// Başvuru ve durum geçmişini getirir
+    /// </summary>
+    [HttpGet("{id:guid}/history")]
+    public async Task<ActionResult<ApplicationWithHistoryDto>> GetWithHistory(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetApplicationWithHistoryQuery(id);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(HandleResult(result));
+    }
+
+    /// <summary>
+    /// Duruma göre başvuruları getirir
+    /// </summary>
+    [HttpGet("by-status/{statusId:int}")]
+    public async Task<ActionResult<IReadOnlyList<CardApplicationDto>>> GetByStatus(
+        int statusId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetCardApplicationsByStatusQuery(statusId);
+        var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
 
@@ -42,59 +81,22 @@ public class CardApplicationsController : ControllerBase
     {
         var command = new CreateCardApplicationCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        var value = HandleResult(result);
+        return CreatedResponse(nameof(GetById), new { id = value.Id }, value);
     }
 
     /// <summary>
-    /// ID ile başvuru getirir
+    /// Başvuruyu incelemeye alır
     /// </summary>
-    [HttpGet("{id:guid}")]
-    public async Task<ActionResult<CardApplicationDto>> GetById(
+    [HttpPost("{id:guid}/start-review")]
+    public async Task<ActionResult<CardApplicationDto>> StartReview(
         Guid id,
+        [FromQuery] string reviewerUsername,
         CancellationToken cancellationToken)
     {
-        var query = new GetCardApplicationByIdQuery(id);
-        var result = await _mediator.Send(query, cancellationToken);
-
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
-    }
-
-    /// <summary>
-    /// Başvuru ve durum geçmişini getirir
-    /// </summary>
-    [HttpGet("{id:guid}/history")]
-    public async Task<ActionResult<ApplicationWithHistoryDto>> GetWithHistory(
-        Guid id,
-        CancellationToken cancellationToken)
-    {
-        var query = new GetApplicationWithHistoryQuery(id);
-        var result = await _mediator.Send(query, cancellationToken);
-
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
-    }
-
-    /// <summary>
-    /// Duruma göre başvuruları getirir
-    /// </summary>
-    [HttpGet("by-status/{statusId:int}")]
-    public async Task<ActionResult<IReadOnlyList<CardApplicationDto>>> GetByStatus(
-        int statusId,
-        CancellationToken cancellationToken)
-    {
-        var query = new GetCardApplicationsByStatusQuery(statusId);
-        var result = await _mediator.Send(query, cancellationToken);
-
-        return Ok(result);
+        var command = new StartReviewCommand(id, reviewerUsername);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(HandleResult(result));
     }
 
     /// <summary>
@@ -108,10 +110,7 @@ public class CardApplicationsController : ControllerBase
     {
         var command = new ApproveCardApplicationCommand(id, approverUsername);
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
+        HandleResult(result);
         return Ok(new { message = "Başvuru onaylandı" });
     }
 
@@ -126,10 +125,7 @@ public class CardApplicationsController : ControllerBase
     {
         var command = new RejectCardApplicationCommand(id, request.Reason, request.RejectorUsername);
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
+        HandleResult(result);
         return Ok(new { message = "Başvuru reddedildi" });
     }
 
@@ -144,10 +140,7 @@ public class CardApplicationsController : ControllerBase
     {
         var command = new RequestCardPrintCommand(id, request.PrintVendorId, request.BatchId, request.OperatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
+        HandleResult(result);
         return Ok(new { message = "Kart basım talebi oluşturuldu" });
     }
 
@@ -162,10 +155,7 @@ public class CardApplicationsController : ControllerBase
     {
         var command = new MarkCardAsPrintedCommand(id, request.EncryptedCardNumber, request.MaskedCardNumber, request.OperatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
+        HandleResult(result);
         return Ok(new { message = "Kart basıldı olarak işaretlendi" });
     }
 
@@ -180,10 +170,7 @@ public class CardApplicationsController : ControllerBase
     {
         var command = new StartDeliveryCommand(id, request.TrackingNumber, request.OperatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
+        HandleResult(result);
         return Ok(new { message = "Teslimat başlatıldı" });
     }
 
@@ -198,10 +185,7 @@ public class CardApplicationsController : ControllerBase
     {
         var command = new MarkAsDeliveredCommand(id, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
+        HandleResult(result);
         return Ok(new { message = "Kart teslim edildi" });
     }
 
@@ -216,10 +200,7 @@ public class CardApplicationsController : ControllerBase
     {
         var command = new CancelCardApplicationCommand(id, request.Reason, request.OperatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
+        HandleResult(result);
         return Ok(new { message = "Başvuru iptal edildi" });
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Card.Application.DTOs;
+﻿using Card.Domain.Entities;
+
+namespace Card.Application.DTOs;
 
 /// <summary>
 /// Kart başvurusu response DTO
@@ -17,7 +19,9 @@ public class CardApplicationDto
     public string DeliveryAddress { get; set; } = null!;
 
     // Kart Bilgileri
+    public int CardTypeId { get; set; }
     public string CardType { get; set; } = null!;
+    public int StatusId { get; set; }
     public string Status { get; set; } = null!;
     public string StatusDisplayName { get; set; } = null!;
     public string? CardNumberMasked { get; set; }
@@ -44,4 +48,41 @@ public class CardApplicationDto
     // Audit
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Entity'den DTO'ya dönüşüm
+    /// </summary>
+    public static CardApplicationDto FromEntity(CardApplication entity)
+    {
+        return new CardApplicationDto
+        {
+            Id = entity.Id,
+            CustomerTckn = entity.CustomerTckn.Value,
+            CustomerName = entity.CustomerName,
+            CustomerSurname = entity.CustomerSurname,
+            CustomerFullName = entity.CustomerFullName,
+            PhoneNumber = entity.PhoneNumber,
+            Email = entity.Email,
+            DeliveryAddress = entity.DeliveryAddress.SingleLine,
+            CardTypeId = entity.CardType.Id,
+            CardType = entity.CardType.Name,
+            StatusId = entity.Status.Id,
+            Status = entity.Status.Name,
+            StatusDisplayName = entity.Status.DisplayName,
+            CardNumberMasked = entity.CardNumberMasked,
+            DailyLimit = entity.DailyLimit.Amount,
+            MonthlyLimit = entity.MonthlyLimit.Amount,
+            Currency = entity.DailyLimit.Currency,
+            PrintVendor = entity.PrintVendor?.DisplayName,
+            PrintBatchId = entity.PrintBatchId,
+            PrintedAt = entity.PrintedAt,
+            CourierTrackingNumber = entity.CourierTrackingNumber,
+            DeliveredAt = entity.DeliveredAt,
+            ApprovedBy = entity.ApprovedBy,
+            ApprovedAt = entity.ApprovedAt,
+            RejectionReason = entity.RejectionReason,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt
+        };
+    }
 }

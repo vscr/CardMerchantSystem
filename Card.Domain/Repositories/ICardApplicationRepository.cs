@@ -10,6 +10,19 @@ namespace Card.Domain.Repositories;
 /// </summary>
 public interface ICardApplicationRepository
 {
+    Task<(IReadOnlyList<CardApplication> Items, int TotalCount)> GetPagedAsync(
+    int pageNumber,
+    int pageSize,
+    int? statusId = null,
+    int? cardTypeId = null,
+    string? customerTckn = null,
+    string? customerName = null,
+    DateTime? startDate = null,
+    DateTime? endDate = null,
+    string? sortBy = null,
+    bool sortDescending = false,
+    CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<CardApplication>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<CardApplication?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
