@@ -29,7 +29,6 @@ public class MenuService : IMenuService
     {
         var menus = await _context.Menus
             .Include(m => m.Claims)
-            .Where(m => m.IsActive)
             .OrderBy(m => m.DisplayOrder)
             .ToListAsync(cancellationToken);
 
