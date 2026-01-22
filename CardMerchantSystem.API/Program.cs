@@ -150,6 +150,9 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 // Dashboard Service
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
+// Localization Service
+builder.Services.AddScoped<ILocalizationService, LocalizationService>();
+
 // Card Module
 builder.Services.AddCardApplication();
 builder.Services.AddCardInfrastructure(connectionString);

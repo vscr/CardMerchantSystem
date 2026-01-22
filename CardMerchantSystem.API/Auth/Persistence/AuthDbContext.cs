@@ -15,11 +15,38 @@ public class AuthDbContext : DbContext
     public DbSet<RoleEntity> Roles => Set<RoleEntity>();
     public DbSet<UserRoleEntity> UserRoles => Set<UserRoleEntity>();
     public DbSet<MenuEntity> Menus => Set<MenuEntity>();
-    public DbSet<MenuClaimEntity> MenuClaims => Set<MenuClaimEntity>();
+    public DbSet<MenuClaimEntity> MenuClaims => Set<MenuClaimEntity>(); 
+    public DbSet<LanguageEntity> Languages => Set<LanguageEntity>();
+    public DbSet<TranslationEntity> Translations => Set<TranslationEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Language Configuration
+        modelBuilder.Entity<LanguageEntity>(entity =>
+        {
+            entity.ToTable("Languages");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(5);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.NativeName).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.Code).IsUnique();
+        });
+
+        // Translation Configuration
+        modelBuilder.Entity<TranslationEntity>(entity =>
+        {
+            entity.ToTable("Translations");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.LanguageCode).IsRequired().HasMaxLength(5);
+            entity.Property(e => e.Key).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Value).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Category).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => new { e.LanguageCode, e.Key }).IsUnique();
+            entity.HasIndex(e => e.Category);
+        });
 
         // User Configuration
         modelBuilder.Entity<UserEntity>(entity =>
@@ -102,6 +129,7 @@ public class AuthDbContext : DbContext
         SeedRoles(modelBuilder);
         SeedAdminUser(modelBuilder);
         SeedMenus(modelBuilder);
+        SeedLanguages(modelBuilder);
     }
 
     private static void SeedRoles(ModelBuilder modelBuilder)
@@ -136,6 +164,8 @@ public class AuthDbContext : DbContext
             AssignedBy = "System"
         });
     }
+
+
 
     private static void SeedMenus(ModelBuilder modelBuilder)
     {
@@ -231,6 +261,126 @@ public class AuthDbContext : DbContext
         };
 
         modelBuilder.Entity<MenuClaimEntity>().HasData(claims);
+    }
+
+    private static void SeedLanguages(ModelBuilder modelBuilder)
+    {
+        var createdAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        // Diller
+        var languages = new List<LanguageEntity>
+    {
+        new() { Id = 1, Code = "tr", Name = "Turkish", NativeName = "Türkçe", IsActive = true, IsDefault = true, CreatedAt = createdAt },
+        new() { Id = 2, Code = "en", Name = "English", NativeName = "English", IsActive = true, IsDefault = false, CreatedAt = createdAt }
+    };
+
+        modelBuilder.Entity<LanguageEntity>().HasData(languages);
+
+        // Çeviriler
+        var translations = new List<TranslationEntity>
+    {
+        // === MENU - Turkish ===
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000001"), LanguageCode = "tr", Key = "menu.dashboard", Value = "Dashboard", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000002"), LanguageCode = "tr", Key = "menu.card-management", Value = "Kart Yönetimi", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000003"), LanguageCode = "tr", Key = "menu.cards", Value = "Kartlar", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000004"), LanguageCode = "tr", Key = "menu.card-applications", Value = "Başvurular", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000005"), LanguageCode = "tr", Key = "menu.card-blocks", Value = "Blokeler", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000006"), LanguageCode = "tr", Key = "menu.merchant-management", Value = "Üye İşyeri", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000007"), LanguageCode = "tr", Key = "menu.merchants", Value = "İşyerleri", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000008"), LanguageCode = "tr", Key = "menu.terminals", Value = "Terminaller", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000009"), LanguageCode = "tr", Key = "menu.finance-management", Value = "Finans", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000010"), LanguageCode = "tr", Key = "menu.transactions", Value = "İşlemler", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000011"), LanguageCode = "tr", Key = "menu.statements", Value = "Ekstreler", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000012"), LanguageCode = "tr", Key = "menu.accounting", Value = "Muhasebe", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000013"), LanguageCode = "tr", Key = "menu.work-orders", Value = "İş Emirleri", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000014"), LanguageCode = "tr", Key = "menu.system-management", Value = "Sistem", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000015"), LanguageCode = "tr", Key = "menu.users", Value = "Kullanıcılar", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000016"), LanguageCode = "tr", Key = "menu.roles", Value = "Roller", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0001-000000000017"), LanguageCode = "tr", Key = "menu.menus", Value = "Menüler", Category = "menu", CreatedAt = createdAt },
+
+        // === MENU - English ===
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000001"), LanguageCode = "en", Key = "menu.dashboard", Value = "Dashboard", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000002"), LanguageCode = "en", Key = "menu.card-management", Value = "Card Management", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000003"), LanguageCode = "en", Key = "menu.cards", Value = "Cards", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000004"), LanguageCode = "en", Key = "menu.card-applications", Value = "Applications", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000005"), LanguageCode = "en", Key = "menu.card-blocks", Value = "Blocks", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000006"), LanguageCode = "en", Key = "menu.merchant-management", Value = "Merchant", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000007"), LanguageCode = "en", Key = "menu.merchants", Value = "Merchants", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000008"), LanguageCode = "en", Key = "menu.terminals", Value = "Terminals", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000009"), LanguageCode = "en", Key = "menu.finance-management", Value = "Finance", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000010"), LanguageCode = "en", Key = "menu.transactions", Value = "Transactions", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000011"), LanguageCode = "en", Key = "menu.statements", Value = "Statements", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000012"), LanguageCode = "en", Key = "menu.accounting", Value = "Accounting", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000013"), LanguageCode = "en", Key = "menu.work-orders", Value = "Work Orders", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000014"), LanguageCode = "en", Key = "menu.system-management", Value = "System", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000015"), LanguageCode = "en", Key = "menu.users", Value = "Users", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000016"), LanguageCode = "en", Key = "menu.roles", Value = "Roles", Category = "menu", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0002-000000000017"), LanguageCode = "en", Key = "menu.menus", Value = "Menus", Category = "menu", CreatedAt = createdAt },
+
+        // === ROLES - Turkish ===
+        new() { Id = Guid.Parse("40000000-0000-0000-0003-000000000001"), LanguageCode = "tr", Key = "role.Admin", Value = "Sistem Yöneticisi", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0003-000000000002"), LanguageCode = "tr", Key = "role.CardOperator", Value = "Kart Operasyon", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0003-000000000003"), LanguageCode = "tr", Key = "role.MerchantOperator", Value = "Üye İşyeri Operasyon", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0003-000000000004"), LanguageCode = "tr", Key = "role.FinanceOperator", Value = "Finans Operasyon", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0003-000000000005"), LanguageCode = "tr", Key = "role.ComplianceOfficer", Value = "Uyum Sorumlusu", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0003-000000000006"), LanguageCode = "tr", Key = "role.CallCenterAgent", Value = "Çağrı Merkezi", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0003-000000000007"), LanguageCode = "tr", Key = "role.Viewer", Value = "Görüntüleyici", Category = "role", CreatedAt = createdAt },
+
+        // === ROLES - English ===
+        new() { Id = Guid.Parse("40000000-0000-0000-0004-000000000001"), LanguageCode = "en", Key = "role.Admin", Value = "System Administrator", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0004-000000000002"), LanguageCode = "en", Key = "role.CardOperator", Value = "Card Operator", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0004-000000000003"), LanguageCode = "en", Key = "role.MerchantOperator", Value = "Merchant Operator", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0004-000000000004"), LanguageCode = "en", Key = "role.FinanceOperator", Value = "Finance Operator", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0004-000000000005"), LanguageCode = "en", Key = "role.ComplianceOfficer", Value = "Compliance Officer", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0004-000000000006"), LanguageCode = "en", Key = "role.CallCenterAgent", Value = "Call Center Agent", Category = "role", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0004-000000000007"), LanguageCode = "en", Key = "role.Viewer", Value = "Viewer", Category = "role", CreatedAt = createdAt },
+
+        // === COMMON - Turkish ===
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000001"), LanguageCode = "tr", Key = "common.save", Value = "Kaydet", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000002"), LanguageCode = "tr", Key = "common.cancel", Value = "İptal", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000003"), LanguageCode = "tr", Key = "common.delete", Value = "Sil", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000004"), LanguageCode = "tr", Key = "common.edit", Value = "Düzenle", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000005"), LanguageCode = "tr", Key = "common.add", Value = "Ekle", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000006"), LanguageCode = "tr", Key = "common.search", Value = "Ara", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000007"), LanguageCode = "tr", Key = "common.filter", Value = "Filtrele", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000008"), LanguageCode = "tr", Key = "common.refresh", Value = "Yenile", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000009"), LanguageCode = "tr", Key = "common.yes", Value = "Evet", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000010"), LanguageCode = "tr", Key = "common.no", Value = "Hayır", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000011"), LanguageCode = "tr", Key = "common.loading", Value = "Yükleniyor...", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000012"), LanguageCode = "tr", Key = "common.noData", Value = "Veri bulunamadı", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000013"), LanguageCode = "tr", Key = "common.success", Value = "Başarılı", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000014"), LanguageCode = "tr", Key = "common.error", Value = "Hata", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000015"), LanguageCode = "tr", Key = "common.warning", Value = "Uyarı", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000016"), LanguageCode = "tr", Key = "common.confirm", Value = "Onayla", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000017"), LanguageCode = "tr", Key = "common.back", Value = "Geri", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000018"), LanguageCode = "tr", Key = "common.next", Value = "İleri", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000019"), LanguageCode = "tr", Key = "common.close", Value = "Kapat", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0005-000000000020"), LanguageCode = "tr", Key = "common.actions", Value = "İşlemler", Category = "common", CreatedAt = createdAt },
+
+        // === COMMON - English ===
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000001"), LanguageCode = "en", Key = "common.save", Value = "Save", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000002"), LanguageCode = "en", Key = "common.cancel", Value = "Cancel", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000003"), LanguageCode = "en", Key = "common.delete", Value = "Delete", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000004"), LanguageCode = "en", Key = "common.edit", Value = "Edit", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000005"), LanguageCode = "en", Key = "common.add", Value = "Add", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000006"), LanguageCode = "en", Key = "common.search", Value = "Search", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000007"), LanguageCode = "en", Key = "common.filter", Value = "Filter", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000008"), LanguageCode = "en", Key = "common.refresh", Value = "Refresh", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000009"), LanguageCode = "en", Key = "common.yes", Value = "Yes", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000010"), LanguageCode = "en", Key = "common.no", Value = "No", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000011"), LanguageCode = "en", Key = "common.loading", Value = "Loading...", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000012"), LanguageCode = "en", Key = "common.noData", Value = "No data found", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000013"), LanguageCode = "en", Key = "common.success", Value = "Success", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000014"), LanguageCode = "en", Key = "common.error", Value = "Error", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000015"), LanguageCode = "en", Key = "common.warning", Value = "Warning", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000016"), LanguageCode = "en", Key = "common.confirm", Value = "Confirm", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000017"), LanguageCode = "en", Key = "common.back", Value = "Back", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000018"), LanguageCode = "en", Key = "common.next", Value = "Next", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000019"), LanguageCode = "en", Key = "common.close", Value = "Close", Category = "common", CreatedAt = createdAt },
+        new() { Id = Guid.Parse("40000000-0000-0000-0006-000000000020"), LanguageCode = "en", Key = "common.actions", Value = "Actions", Category = "common", CreatedAt = createdAt },
+    };
+
+        modelBuilder.Entity<TranslationEntity>().HasData(translations);
     }
 
     private static string HashPassword(string password)
