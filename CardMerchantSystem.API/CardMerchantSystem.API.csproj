@@ -96,4 +96,8 @@
 		<ProjectReference Include="..\WorkOrder.Infrastructure\WorkOrder.Infrastructure.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Logs\" />
+	</ItemGroup>
+
 </Project>
