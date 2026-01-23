@@ -44,6 +44,7 @@ using Transaction.Application;
 using Transaction.Infrastructure;
 using WorkOrder.Application;
 using WorkOrder.Infrastructure;
+using CardMerchantSystem.Shared.Data.Dapper.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -149,6 +150,10 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 
 // Dashboard Service
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+
+// Dapper Type Handler'larý kaydet
+SqlMapperExtensions.RegisterTypeHandlers();
+SqlMapperExtensions.ConfigureCaseInsensitiveMapping();
 
 // Localization Service
 builder.Services.AddScoped<ILocalizationService, LocalizationService>();
