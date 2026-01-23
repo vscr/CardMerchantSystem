@@ -85,14 +85,15 @@ public abstract class BaseDapperRepository
     /// <summary>
     /// Scalar değer döner (COUNT, SUM, vb.)
     /// </summary>
-    protected async Task<T?> ExecuteScalarAsync<T>(
+    protected async Task<T> ExecuteScalarAsync<T>(
         string sql,
         object? param = null,
         IDbTransaction? transaction = null,
         int? commandTimeout = null)
     {
         using var connection = _dapperContext.CreateConnection();
-        return await connection.ExecuteScalarAsync<T>(sql, param, transaction, commandTimeout);
+        var result = await connection.ExecuteScalarAsync<T>(sql, param, transaction, commandTimeout);
+        return result;
     }
 
     /// <summary>

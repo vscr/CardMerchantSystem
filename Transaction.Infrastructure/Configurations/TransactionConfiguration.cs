@@ -83,7 +83,7 @@ public class TransactionConfiguration : IEntityTypeConfiguration<TransactionAggr
         builder.Property(x => x.MerchantCode).HasMaxLength(15).IsRequired();
         builder.Property(x => x.TerminalCode).HasMaxLength(8).IsRequired();
         builder.Property(x => x.ErrorMessage).HasMaxLength(500);
-        builder.Property(x => x.BatchNumber).HasMaxLength(20);
+        builder.Property(x => x.BatchNumber).HasMaxLength(25);
         builder.Property(x => x.CreatedBy).HasMaxLength(50);
         builder.Property(x => x.UpdatedBy).HasMaxLength(50);
 

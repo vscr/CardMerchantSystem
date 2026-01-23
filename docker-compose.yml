@@ -1,0 +1,59 @@
+# CardMerchantSystem/docker-compose.yml
+
+version: '3.8'
+
+services:
+  # ═══════════════════════════════════════════════════════
+  # ELASTICSEARCH
+  # ═══════════════════════════════════════════════════════
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: cardmerchant-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - cluster.name=cardmerchant-cluster
+      - node.name=cardmerchant-node-1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - cardmerchant-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ═══════════════════════════════════════════════════════
+  # KIBANA
+  # ═══════════════════════════════════════════════════════
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: cardmerchant-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_NAME=cardmerchant-kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - cardmerchant-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  elasticsearch-data:
+    driver: local
+
+networks:
+  cardmerchant-network:
+    driver: bridge

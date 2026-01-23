@@ -1,79 +1,99 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.9" />
-    <PackageReference Include="Hangfire.Core" Version="1.8.9" />
-    <PackageReference Include="Hangfire.SqlServer" Version="1.8.9" />
-    <PackageReference Include="MediatR" Version="12.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+		<PackageReference Include="Hangfire.AspNetCore" Version="1.8.9" />
+		<PackageReference Include="Hangfire.Core" Version="1.8.9" />
+		<PackageReference Include="Hangfire.SqlServer" Version="1.8.9" />
+		<PackageReference Include="MediatR" Version="12.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" />
 
-  <ItemGroup>
-    <ProjectReference Include="..\Accounting.Application\Accounting.Application.csproj" />
-    <ProjectReference Include="..\Accounting.Domain\Accounting.Domain.csproj" />
-    <ProjectReference Include="..\Accounting.Infrastructure\Accounting.Infrastructure.csproj" />
-    <ProjectReference Include="..\BKM.Application\BKM.Application.csproj" />
-    <ProjectReference Include="..\BKM.Domain\BKM.Domain.csproj" />
-    <ProjectReference Include="..\BKM.Infrastructure\BKM.Infrastructure.csproj" />
-    <ProjectReference Include="..\BulkCardPrint.Application\BulkCardPrint.Application.csproj" />
-    <ProjectReference Include="..\BulkCardPrint.Domain\BulkCardPrint.Domain.csproj" />
-    <ProjectReference Include="..\BulkCardPrint.Infrastructure\BulkCardPrint.Infrastructure.csproj" />
-    <ProjectReference Include="..\Campaign.Application\Campaign.Application.csproj" />
-    <ProjectReference Include="..\Campaign.Domain\Campaign.Domain.csproj" />
-    <ProjectReference Include="..\Campaign.Infrastructure\Campaign.Infrastructure.csproj" />
-    <ProjectReference Include="..\Card.Application\Card.Application.csproj" />
-    <ProjectReference Include="..\Card.Domain\Card.Domain.csproj" />
-    <ProjectReference Include="..\Card.Infrastructure\Card.Infrastructure.csproj" />
-    <ProjectReference Include="..\CardMerchantSystem.Shared\CardMerchantSystem.Shared.csproj" />
-    <ProjectReference Include="..\Courier.Application\Courier.Application.csproj" />
-    <ProjectReference Include="..\Courier.Domain\Courier.Domain.csproj" />
-    <ProjectReference Include="..\Courier.Infrastructure\Courier.Infrastructure.csproj" />
-    <ProjectReference Include="..\Dispute.Application\Dispute.Application.csproj" />
-    <ProjectReference Include="..\Dispute.Domain\Dispute.Domain.csproj" />
-    <ProjectReference Include="..\Dispute.Infrastructure\Dispute.Infrastructure.csproj" />
-    <ProjectReference Include="..\EarlyBlockResolution.Application\EarlyBlockResolution.Application.csproj" />
-    <ProjectReference Include="..\EarlyBlockResolution.Domain\EarlyBlockResolution.Domain.csproj" />
-    <ProjectReference Include="..\EarlyBlockResolution.Infrastructure\EarlyBlockResolution.Infrastructure.csproj" />
-    <ProjectReference Include="..\Fee.Application\Fee.Application.csproj" />
-    <ProjectReference Include="..\Fee.Domain\Fee.Domain.csproj" />
-    <ProjectReference Include="..\Fee.Infrastructure\Fee.Infrastructure.csproj" />
-    <ProjectReference Include="..\HSM.Application\HSM.Application.csproj" />
-    <ProjectReference Include="..\HSM.Domain\HSM.Domain.csproj" />
-    <ProjectReference Include="..\HSM.Infrastructure\HSM.Infrastructure.csproj" />
-    <ProjectReference Include="..\Merchant.Application\Merchant.Application.csproj" />
-    <ProjectReference Include="..\Merchant.Domain\Merchant.Domain.csproj" />
-    <ProjectReference Include="..\Merchant.Infrastructure\Merchant.Infrastructure.csproj" />
-    <ProjectReference Include="..\MerchantReport.Application\MerchantReport.Application.csproj" />
-    <ProjectReference Include="..\MerchantReport.Domain\MerchantReport.Domain.csproj" />
-    <ProjectReference Include="..\MerchantReport.Infrastructure\MerchantReport.Infrastructure.csproj" />
-    <ProjectReference Include="..\MerchantSettlement.Application\MerchantSettlement.Application.csproj" />
-    <ProjectReference Include="..\MerchantSettlement.Domain\MerchantSettlement.Domain.csproj" />
-    <ProjectReference Include="..\MerchantSettlement.Infrastructure\MerchantSettlement.Infrastructure.csproj" />
-    <ProjectReference Include="..\RegulatoryReporting.Application\RegulatoryReporting.Application.csproj" />
-    <ProjectReference Include="..\RegulatoryReporting.Domain\RegulatoryReporting.Domain.csproj" />
-    <ProjectReference Include="..\RegulatoryReporting.Infrastructure\RegulatoryReporting.Infrastructure.csproj" />
-    <ProjectReference Include="..\Statement.Application\Statement.Application.csproj" />
-    <ProjectReference Include="..\Statement.Domain\Statement.Domain.csproj" />
-    <ProjectReference Include="..\Statement.Infrastructure\Statement.Infrastructure.csproj" />
-    <ProjectReference Include="..\Transaction.Application\Transaction.Application.csproj" />
-    <ProjectReference Include="..\Transaction.Domain\Transaction.Domain.csproj" />
-    <ProjectReference Include="..\Transaction.Infrastructure\Transaction.Infrastructure.csproj" />
-    <ProjectReference Include="..\WorkOrder.Application\WorkOrder.Application.csproj" />
-    <ProjectReference Include="..\WorkOrder.Domain\WorkOrder.Domain.csproj" />
-    <ProjectReference Include="..\WorkOrder.Infrastructure\WorkOrder.Infrastructure.csproj" />
-  </ItemGroup>
+		<!-- Serilog Core -->
+		<PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+
+		<!-- Enrichers -->
+		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+		<PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
+		<PackageReference Include="Serilog.Enrichers.ClientInfo" Version="2.1.1" />
+
+		<!-- Sinks -->
+		<PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+		<PackageReference Include="Serilog.Sinks.Seq" Version="7.0.1" />
+		<PackageReference Include="Serilog.Sinks.Elasticsearch" Version="10.0.0" />
+
+		<!-- Formatters -->
+		<PackageReference Include="Serilog.Formatting.Compact" Version="2.0.0" />
+		<PackageReference Include="Serilog.Formatting.Elasticsearch" Version="10.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Accounting.Application\Accounting.Application.csproj" />
+		<ProjectReference Include="..\Accounting.Domain\Accounting.Domain.csproj" />
+		<ProjectReference Include="..\Accounting.Infrastructure\Accounting.Infrastructure.csproj" />
+		<ProjectReference Include="..\BKM.Application\BKM.Application.csproj" />
+		<ProjectReference Include="..\BKM.Domain\BKM.Domain.csproj" />
+		<ProjectReference Include="..\BKM.Infrastructure\BKM.Infrastructure.csproj" />
+		<ProjectReference Include="..\BulkCardPrint.Application\BulkCardPrint.Application.csproj" />
+		<ProjectReference Include="..\BulkCardPrint.Domain\BulkCardPrint.Domain.csproj" />
+		<ProjectReference Include="..\BulkCardPrint.Infrastructure\BulkCardPrint.Infrastructure.csproj" />
+		<ProjectReference Include="..\Campaign.Application\Campaign.Application.csproj" />
+		<ProjectReference Include="..\Campaign.Domain\Campaign.Domain.csproj" />
+		<ProjectReference Include="..\Campaign.Infrastructure\Campaign.Infrastructure.csproj" />
+		<ProjectReference Include="..\Card.Application\Card.Application.csproj" />
+		<ProjectReference Include="..\Card.Domain\Card.Domain.csproj" />
+		<ProjectReference Include="..\Card.Infrastructure\Card.Infrastructure.csproj" />
+		<ProjectReference Include="..\CardMerchantSystem.Shared\CardMerchantSystem.Shared.csproj" />
+		<ProjectReference Include="..\Courier.Application\Courier.Application.csproj" />
+		<ProjectReference Include="..\Courier.Domain\Courier.Domain.csproj" />
+		<ProjectReference Include="..\Courier.Infrastructure\Courier.Infrastructure.csproj" />
+		<ProjectReference Include="..\Dispute.Application\Dispute.Application.csproj" />
+		<ProjectReference Include="..\Dispute.Domain\Dispute.Domain.csproj" />
+		<ProjectReference Include="..\Dispute.Infrastructure\Dispute.Infrastructure.csproj" />
+		<ProjectReference Include="..\EarlyBlockResolution.Application\EarlyBlockResolution.Application.csproj" />
+		<ProjectReference Include="..\EarlyBlockResolution.Domain\EarlyBlockResolution.Domain.csproj" />
+		<ProjectReference Include="..\EarlyBlockResolution.Infrastructure\EarlyBlockResolution.Infrastructure.csproj" />
+		<ProjectReference Include="..\Fee.Application\Fee.Application.csproj" />
+		<ProjectReference Include="..\Fee.Domain\Fee.Domain.csproj" />
+		<ProjectReference Include="..\Fee.Infrastructure\Fee.Infrastructure.csproj" />
+		<ProjectReference Include="..\HSM.Application\HSM.Application.csproj" />
+		<ProjectReference Include="..\HSM.Domain\HSM.Domain.csproj" />
+		<ProjectReference Include="..\HSM.Infrastructure\HSM.Infrastructure.csproj" />
+		<ProjectReference Include="..\Merchant.Application\Merchant.Application.csproj" />
+		<ProjectReference Include="..\Merchant.Domain\Merchant.Domain.csproj" />
+		<ProjectReference Include="..\Merchant.Infrastructure\Merchant.Infrastructure.csproj" />
+		<ProjectReference Include="..\MerchantReport.Application\MerchantReport.Application.csproj" />
+		<ProjectReference Include="..\MerchantReport.Domain\MerchantReport.Domain.csproj" />
+		<ProjectReference Include="..\MerchantReport.Infrastructure\MerchantReport.Infrastructure.csproj" />
+		<ProjectReference Include="..\MerchantSettlement.Application\MerchantSettlement.Application.csproj" />
+		<ProjectReference Include="..\MerchantSettlement.Domain\MerchantSettlement.Domain.csproj" />
+		<ProjectReference Include="..\MerchantSettlement.Infrastructure\MerchantSettlement.Infrastructure.csproj" />
+		<ProjectReference Include="..\RegulatoryReporting.Application\RegulatoryReporting.Application.csproj" />
+		<ProjectReference Include="..\RegulatoryReporting.Domain\RegulatoryReporting.Domain.csproj" />
+		<ProjectReference Include="..\RegulatoryReporting.Infrastructure\RegulatoryReporting.Infrastructure.csproj" />
+		<ProjectReference Include="..\Statement.Application\Statement.Application.csproj" />
+		<ProjectReference Include="..\Statement.Domain\Statement.Domain.csproj" />
+		<ProjectReference Include="..\Statement.Infrastructure\Statement.Infrastructure.csproj" />
+		<ProjectReference Include="..\Transaction.Application\Transaction.Application.csproj" />
+		<ProjectReference Include="..\Transaction.Domain\Transaction.Domain.csproj" />
+		<ProjectReference Include="..\Transaction.Infrastructure\Transaction.Infrastructure.csproj" />
+		<ProjectReference Include="..\WorkOrder.Application\WorkOrder.Application.csproj" />
+		<ProjectReference Include="..\WorkOrder.Domain\WorkOrder.Domain.csproj" />
+		<ProjectReference Include="..\WorkOrder.Infrastructure\WorkOrder.Infrastructure.csproj" />
+	</ItemGroup>
 
 </Project>

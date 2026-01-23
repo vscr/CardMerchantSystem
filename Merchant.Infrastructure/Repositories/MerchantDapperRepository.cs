@@ -8,7 +8,8 @@ namespace Merchant.Infrastructure.Repositories;
 
 public class MerchantDapperRepository : BaseDapperRepository, IMerchantDapperRepository
 {
-    public MerchantDapperRepository(IDapperContext dapperContext) : base(dapperContext)
+    public MerchantDapperRepository(IDapperContext dapperContext)
+        : base(dapperContext)
     {
     }
 
@@ -62,7 +63,7 @@ public class MerchantDapperRepository : BaseDapperRepository, IMerchantDapperRep
         const string sql = @"
             SELECT COUNT(*)
             FROM Merchants
-            WHERE StatusId = 3"; // MerchantStatus.Active = 3
+            WHERE StatusId = 3";
 
         var result = await ExecuteScalarAsync<int>(sql);
         return result;
