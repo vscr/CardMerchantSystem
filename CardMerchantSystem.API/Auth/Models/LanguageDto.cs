@@ -16,12 +16,12 @@ public class TranslationDto
     public string LanguageCode { get; set; } = null!;
     public string Key { get; set; } = null!;
     public string Value { get; set; } = null!;
-    public string Category { get; set; } = null!;
+    public string[] Category { get; set; } = null!;
 }
 
 public class TranslationByCategoryDto
 {
-    public string Category { get; set; } = null!;
+    public string[] Category { get; set; } = null!;
     public Dictionary<string, string> Translations { get; set; } = new();
 }
 
@@ -37,7 +37,7 @@ public class CreateTranslationDto
     public string LanguageCode { get; set; } = null!;
     public string Key { get; set; } = null!;
     public string Value { get; set; } = null!;
-    public string Category { get; set; } = null!;
+    public string[] Category { get; set; } = null!;
 }
 
 public class UpdateTranslationDto
@@ -48,6 +48,6 @@ public class UpdateTranslationDto
 public class BulkTranslationDto
 {
     public string LanguageCode { get; set; } = null!;
-    public string Category { get; set; } = null!;
+    public string[] Category { get; set; } = null!;
     public Dictionary<string, string> Translations { get; set; } = new();
 }

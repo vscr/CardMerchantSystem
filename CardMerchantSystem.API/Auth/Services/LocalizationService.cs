@@ -145,7 +145,7 @@ public class LocalizationService : ILocalizationService
             LanguageCode = dto.LanguageCode,
             Key = dto.Key,
             Value = dto.Value,
-            Category = dto.Category,
+            Category = string.Join(',', dto.Category),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -207,7 +207,7 @@ public class LocalizationService : ILocalizationService
                     LanguageCode = dto.LanguageCode,
                     Key = key,
                     Value = value,
-                    Category = dto.Category,
+                    Category = string.Join(',', dto.Category),
                     CreatedAt = DateTime.UtcNow
                 }, cancellationToken);
             }
@@ -245,7 +245,7 @@ public class LocalizationService : ILocalizationService
             LanguageCode = entity.LanguageCode,
             Key = entity.Key,
             Value = entity.Value,
-            Category = entity.Category
+            Category = entity.Category.Split(',')
         };
     }
 
