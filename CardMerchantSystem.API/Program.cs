@@ -94,7 +94,6 @@ try
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
                 formatter: new Serilog.Formatting.Compact.CompactJsonFormatter())
-            // SEQ SATIRINI KALDIRDIK - Artık yok
             .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(
                 context.Configuration["Serilog:WriteTo:4:Args:nodeUris"] ?? "http://localhost:9200"))
             {
@@ -316,10 +315,10 @@ try
 
     builder.Services.AddHangfireServer();
 
-    // Jobs
-    builder.Services.AddScoped<SettlementJob>();
-    builder.Services.AddScoped<DailyLimitResetJob>();
-    builder.Services.AddScoped<MonthlyLimitResetJob>();
+    //// Jobs
+    //builder.Services.AddScoped<SettlementJob>();
+    //builder.Services.AddScoped<DailyLimitResetJob>();
+    //builder.Services.AddScoped<MonthlyLimitResetJob>();
 
     // ══════════════════════════════════════════════════════════════
     // CONTROLLERS & SWAGGER
