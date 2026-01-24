@@ -1,6 +1,8 @@
 name: CD - Deploy to Docker Hub
 
 on:
+  push:
+    branches: [ CI/CD ]  # Geçici - listelenmesi için
   workflow_dispatch:
     inputs:
       environment:
