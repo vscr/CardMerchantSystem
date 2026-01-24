@@ -1,12 +1,10 @@
-﻿// Merchant.Infrastructure/DependencyInjection.cs
-
-using CardMerchantSystem.Shared.Data.Dapper;
+﻿
+using CardMerchantSystem.Shared.Data;
+using CardMerchantSystem.Shared.Data.Extensions;
 using Merchant.Domain.Repositories;
-using Merchant.Infrastructure.Data;
 using Merchant.Infrastructure.Data.Dapper;
 using Merchant.Infrastructure.Persistence;
 using Merchant.Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,23 +14,30 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddMerchantInfrastructure(
         this IServiceCollection services,
-        string connectionString)
+        IConfiguration configuration)
     {
-        // EF DbContext
+        // Database options
+        var databaseOptions = configuration
+            .GetSection(DatabaseOptions.SectionName)
+            .Get<DatabaseOptions>() ?? new DatabaseOptions();
+
+        var connectionString = databaseOptions.GetConnectionString();
+        var provider = databaseOptions.Provider;
+
+        // DbContext
         services.AddDbContext<MerchantDbContext>(options =>
-            options.UseSqlServer(connectionString));
+        {
+            options.ConfigureDatabase(provider, connectionString);
+        });
 
         // Dapper Context
-        services.AddScoped<IDapperContext>(sp =>
+        services.AddScoped<CardMerchantSystem.Shared.Data.Dapper.IDapperContext>(sp =>
         {
-            var configuration = sp.GetRequiredService<IConfiguration>();
             return new MerchantDapperContext(configuration);
         });
 
-        // EF Repositories
+        // Repositories
         services.AddScoped<IMerchantRepository, MerchantRepository>();
-
-        // Dapper Repositories
         services.AddScoped<IMerchantDapperRepository, MerchantDapperRepository>();
 
         return services;

@@ -4,13 +4,20 @@ using Merchant.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Merchant.Infrastructure.Configurations;
+namespace Merchant.Infrastructure.Persistence.Configurations;
 
 public class MerchantConfiguration : IEntityTypeConfiguration<MerchantAggregate>
 {
+    private readonly string _schema;
+
+    public MerchantConfiguration(string schema = "dbo")
+    {
+        _schema = schema;
+    }
+
     public void Configure(EntityTypeBuilder<MerchantAggregate> builder)
     {
-        builder.ToTable("Merchants");
+        builder.ToTable("Merchants", _schema);
 
         builder.HasKey(x => x.Id);
 
@@ -21,7 +28,6 @@ public class MerchantConfiguration : IEntityTypeConfiguration<MerchantAggregate>
                 .HasColumnName("MerchantCode")
                 .HasMaxLength(15)
                 .IsRequired();
-
             mc.HasIndex(m => m.Value).IsUnique();
         });
 
@@ -32,7 +38,6 @@ public class MerchantConfiguration : IEntityTypeConfiguration<MerchantAggregate>
                 .HasColumnName("TaxNumber")
                 .HasMaxLength(10)
                 .IsRequired();
-
             tn.HasIndex(t => t.Value).IsUnique();
         });
 

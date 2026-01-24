@@ -1,45 +1,42 @@
-﻿using System.Data;
-using System.Data.SqlClient;
+﻿
+using CardMerchantSystem.Shared.Data;
 using CardMerchantSystem.Shared.Data.Dapper;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
+using System.Data;
 
 namespace Merchant.Infrastructure.Data.Dapper;
 
 public class MerchantDapperContext : IDapperContext
 {
     private readonly string _connectionString;
+    private readonly DatabaseProvider _provider;
 
-    // Constructor - IConfiguration ile
     public MerchantDapperContext(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("MerchantDb connection string not found.");
-    }
+        var databaseOptions = configuration
+            .GetSection(DatabaseOptions.SectionName)
+            .Get<DatabaseOptions>() ?? new DatabaseOptions();
 
-    // Alternatif constructor - direkt connectionString ile
-    public MerchantDapperContext(string connectionString)
-    {
-        _connectionString = connectionString
-            ?? throw new ArgumentNullException(nameof(connectionString));
+        _connectionString = databaseOptions.GetConnectionString();
+        _provider = databaseOptions.Provider;
     }
 
     public IDbConnection CreateConnection()
     {
-        return new SqlConnection(_connectionString);
+        return _provider switch
+        {
+            DatabaseProvider.SqlServer => new SqlConnection(_connectionString),
+            DatabaseProvider.PostgreSql => new NpgsqlConnection(_connectionString),
+            _ => throw new InvalidOperationException($"Unsupported database provider: {_provider}")
+        };
     }
 
     public IDbTransaction BeginTransaction()
     {
         var connection = CreateConnection();
         connection.Open();
-        return connection.BeginTransaction();
-    }
-
-    public IDbTransaction BeginTransaction(IDbConnection connection)
-    {
-        if (connection.State != ConnectionState.Open)
-            connection.Open();
-
         return connection.BeginTransaction();
     }
 }

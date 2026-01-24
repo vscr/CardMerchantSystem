@@ -10,17 +10,12 @@ namespace CardMerchantSystem.Shared.Data.Dapper;
 public interface IDapperContext
 {
     /// <summary>
-    /// SQL Server bağlantısı oluşturur
+    /// Veritabanı bağlantısı oluşturur
     /// </summary>
     IDbConnection CreateConnection();
 
     /// <summary>
-    /// Transaction başlatır
+    /// Yeni bir transaction başlatır
     /// </summary>
     IDbTransaction BeginTransaction();
-
-    /// <summary>
-    /// Transaction başlatır (bağlantı ile)
-    /// </summary>
-    IDbTransaction BeginTransaction(IDbConnection connection);
 }

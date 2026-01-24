@@ -4,6 +4,44 @@ version: '3.8'
 
 services:
   # ═══════════════════════════════════════════════════════
+  # POSTGRESQL
+  # ═══════════════════════════════════════════════════════
+  postgres:
+    image: postgres:16-alpine
+    container_name: cardmerchant-postgres
+    environment:
+      POSTGRES_DB: cardmerchantdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - cardmerchant-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ═══════════════════════════════════════════════════════
+  # PGADMIN (PostgreSQL Management)
+  # ═══════════════════════════════════════════════════════
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cardmerchant-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@cardmerchant.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - cardmerchant-network
+
+  # ═══════════════════════════════════════════════════════
   # ELASTICSEARCH
   # ═══════════════════════════════════════════════════════
   elasticsearch:
@@ -52,6 +90,8 @@ services:
 
 volumes:
   elasticsearch-data:
+    driver: local
+  postgres-data:
     driver: local
 
 networks:

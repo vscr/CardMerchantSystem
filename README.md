@@ -9,45 +9,62 @@ Bankacılık sektörü için kapsamlı Kart ve Üye İşyeri Yönetim Sistemi.
 ### Gereksinimler
 
 - .NET 8 SDK
-- SQL Server (LocalDB veya Express)
-- Docker Desktop (Elasticsearch + Kibana için)
-- Visual Studio 2022
+- Docker Desktop (PostgreSQL + Elasticsearch + Kibana için)
+- Visual Studio 2022 veya VS Code
+- PgAdmin 4 (opsiyonel - PostgreSQL yönetimi için)
 
 ### Kurulum
 
-1. Repository'yi klonla
-2. `appsettings.json` dosyasındaki connection string'i güncelle
-3. Docker servislerini başlat:
+1. **Repository'yi klonla**
+
+2. **Docker servislerini başlat**
 ```bash
 docker-compose up -d
 ```
 
-4. Migration'ları uygula:
-```powershell
-# Tüm DbContext'ler için
-Update-Database -Context CardDbContext
-Update-Database -Context MerchantDbContext
-Update-Database -Context TransactionDbContext
-Update-Database -Context DisputeDbContext
-Update-Database -Context CampaignDbContext
-Update-Database -Context BKMDbContext
-Update-Database -Context HSMDbContext
-Update-Database -Context FeeDbContext
-Update-Database -Context StatementDbContext
-Update-Database -Context AccountingDbContext
-Update-Database -Context MerchantReportDbContext
-Update-Database -Context MerchantSettlementDbContext
-Update-Database -Context BulkCardPrintDbContext
-Update-Database -Context RegulatoryReportingDbContext
-Update-Database -Context CourierDbContext
-Update-Database -Context EarlyBlockResolutionDbContext
-Update-Database -Context WorkOrderDbContext
-Update-Database -Context AuthDbContext
+**Servisler:**
+- PostgreSQL: `localhost:5432`
+- PgAdmin: `http://localhost:5050`
+- Elasticsearch: `http://localhost:9200`
+- Kibana: `http://localhost:5601`
+
+3. **Database provider seç**
+
+`appsettings.json` dosyasını düzenle:
+```json
+{
+  "Database": {
+    "Provider": "SqlServer",  // veya "PostgreSql"
+    "SqlServerConnection": "Server=(localdb)\\MSSQLLocalDB;Database=CardMerchantDb;Trusted_Connection=True;TrustServerCertificate=True;",
+    "PostgreSqlConnection": "Host=localhost;Port=5432;Database=cardmerchantdb;Username=postgres;Password=postgres;"
+  }
+}
 ```
 
-5. Projeyi çalıştır: `F5` veya `dotnet run`
-6. Swagger: `https://localhost:7202/swagger`
-7. Kibana (Logs): `http://localhost:5601`
+4. **Migration'ları uygula**
+
+**Package Manager Console** (Visual Studio):
+```powershell
+# SQL Server için
+Add-Migration InitialCreate_SqlServer -Context MerchantDbContext -OutputDir Persistence\Migrations\SqlServer -StartupProject CardMerchantSystem.API
+Update-Database -Context MerchantDbContext -StartupProject CardMerchantSystem.API
+
+# PostgreSQL için (appsettings.json'da Provider: "PostgreSql" olmalı)
+Add-Migration InitialCreate_PostgreSql -Context MerchantDbContext -OutputDir Persistence\Migrations\PostgreSql -StartupProject CardMerchantSystem.API
+Update-Database -Context MerchantDbContext -StartupProject CardMerchantSystem.API
+
+# Diğer modüller için aynı adımları tekrarla...
+```
+
+5. **Projeyi çalıştır**
+```bash
+dotnet run --project CardMerchantSystem.API
+```
+
+6. **Uygulamaya eriş**
+- Swagger: `https://localhost:7202/swagger`
+- Kibana (Logs): `http://localhost:5601`
+- PgAdmin: `http://localhost:5050`
 
 ### Test Kullanıcıları
 
@@ -62,6 +79,7 @@ Update-Database -Context AuthDbContext
 
 **Backend Modülleri:** 17/19 tamamlandı (%89)
 **Mimari Geliştirmeler:** 4/6 tamamlandı (%67)
+**Database Support:** SQL Server + PostgreSQL
 
 > Detaylı durum için: [PROJECT_STATUS.md](PROJECT_STATUS.md)
 
@@ -80,7 +98,7 @@ Update-Database -Context AuthDbContext
 │       (Entities, Enums, Repositories, Value Objects)        │
 ├─────────────────────────────────────────────────────────────┤
 │                   Infrastructure Layer                      │
-│     (DbContext, EF Core, Dapper, External Services)         │
+│  (DbContext, EF Core, Dapper, PostgreSQL, SQL Server)       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -91,6 +109,7 @@ Update-Database -Context AuthDbContext
 - **Mediator** - MediatR ile request/handler
 - **Repository** - Veri erişim soyutlama
 - **Enumeration** - Type-safe enum'lar
+- **Multi-Database Support** - SQL Server + PostgreSQL
 
 ---
 
@@ -98,25 +117,25 @@ Update-Database -Context AuthDbContext
 
 ### Tamamlanan (17)
 
-| Modül | Açıklama | Dapper |
-|-------|----------|--------|
-| Card | Kart yönetimi, başvuru, limit | - |
+| Modül | Açıklama | PostgreSQL |
+|-------|----------|-----------|
+| Card | Kart yönetimi, başvuru, limit | ⏳ |
 | Merchant | Üye işyeri, terminal, komisyon | ✅ |
-| Transaction | İşlem, provizyon, takas | - |
-| Dispute | İtiraz yönetimi | - |
-| Campaign | Kampanya, kural motoru | - |
-| BKM | Switch entegrasyonu | - |
-| HSM | Güvenlik modülü | - |
-| Fee | Ücret yönetimi | - |
-| Statement | Ekstre yönetimi | - |
-| Accounting | Muhasebe entegrasyonu | - |
-| MerchantReport | Üye işyeri raporlama | - |
-| MerchantSettlement | Üye işyeri takas | - |
-| BulkCardPrint | Toplu kart basım | - |
-| RegulatoryReporting | Yasal raporlama (BDDK/TCMB) | - |
-| Courier | Kurye entegrasyonu | - |
-| EarlyBlockResolution | Erken bloke çözüm | - |
-| WorkOrder | İş emri yönetimi | - |
+| Transaction | İşlem, provizyon, takas | ⏳ |
+| Dispute | İtiraz yönetimi | ⏳ |
+| Campaign | Kampanya, kural motoru | ⏳ |
+| BKM | Switch entegrasyonu | ⏳ |
+| HSM | Güvenlik modülü | ⏳ |
+| Fee | Ücret yönetimi | ⏳ |
+| Statement | Ekstre yönetimi | ⏳ |
+| Accounting | Muhasebe entegrasyonu | ⏳ |
+| MerchantReport | Üye işyeri raporlama | ⏳ |
+| MerchantSettlement | Üye işyeri takas | ⏳ |
+| BulkCardPrint | Toplu kart basım | ⏳ |
+| RegulatoryReporting | Yasal raporlama (BDDK/TCMB) | ⏳ |
+| Courier | Kurye entegrasyonu | ⏳ |
+| EarlyBlockResolution | Erken bloke çözüm | ⏳ |
+| WorkOrder | İş emri yönetimi | ⏳ |
 
 ### Planlanan (2)
 
@@ -124,6 +143,43 @@ Update-Database -Context AuthDbContext
 |-------|----------|---------|
 | InstantCardPrint | Anında kart basım | Düşük |
 | Inventory | Envanter yönetimi | Düşük |
+
+---
+
+## 🗄️ Database Support
+
+### Desteklenen Veritabanları
+
+| Database | Status | Connection String |
+|----------|--------|-------------------|
+| SQL Server | ✅ | LocalDB veya SQL Server Express |
+| PostgreSQL | ✅ | Docker container veya standalone |
+
+### Provider Değiştirme
+
+**appsettings.json:**
+```json
+{
+  "Database": {
+    "Provider": "PostgreSql"  // veya "SqlServer"
+  }
+}
+```
+
+Uygulamayı yeniden başlat - otomatik olarak doğru database'i kullanır!
+
+### Migration Stratejisi
+
+Her modül için ayrı migration klasörleri:
+```
+Merchant.Infrastructure/
+└── Persistence/
+    └── Migrations/
+        ├── SqlServer/
+        │   └── 20260124_InitialCreate_SqlServer.cs
+        └── PostgreSql/
+            └── 20260124_InitialCreate_PostgreSql.cs
+```
 
 ---
 
@@ -154,9 +210,10 @@ public class CardsController : ApiControllerBase
 | Kategori | Teknoloji |
 |----------|-----------|
 | Framework | .NET 8 |
-| ORM | Entity Framework Core 8 + Dapper |
-| Veritabanı | SQL Server |
-| Cache | Redis |
+| ORM (Write) | Entity Framework Core 8 |
+| ORM (Read) | Dapper 2.1 |
+| Veritabanları | SQL Server + PostgreSQL |
+| Cache | Redis (Transaction modülü) |
 | Jobs | Hangfire |
 | Auth | JWT + BCrypt |
 | Validation | FluentValidation |
@@ -180,7 +237,7 @@ Sistem, Serilog ile structured logging kullanır:
 ### Log Seviyeleri
 
 - **Debug**: Geliştirme detayları
-- **Information**: Normal işlem akışı
+- **Information**: Normal işlem akışı, HTTP requests
 - **Warning**: Potansiyel sorunlar
 - **Error**: Hatalar ve exception'lar
 - **Fatal**: Kritik sistem hataları
@@ -196,6 +253,9 @@ http://localhost:5601
 - Performance monitoring (response time)
 - Error tracking ve analiz
 - User activity logs
+- Database provider bilgisi
+
+**Index Pattern:** `cardmerchant-logs-*`
 
 ---
 
@@ -243,7 +303,7 @@ GET /api/merchant/dapper-test/{id}/detail
 ## 📁 Klasör Yapısı
 ```
 CardMerchantSystem/
-├── docker-compose.yml                    # Elasticsearch + Kibana
+├── docker-compose.yml                    # PostgreSQL + Elasticsearch + Kibana
 ├── CardMerchantSystem.sln
 ├── CardMerchantSystem.API/
 │   ├── Logs/                            # Log dosyaları
@@ -254,11 +314,14 @@ CardMerchantSystem/
 │   └── ...
 ├── CardMerchantSystem.Shared/
 │   ├── Data/
+│   │   ├── DatabaseProvider.cs          # Enum: SqlServer, PostgreSql
+│   │   ├── DatabaseOptions.cs           # Database configuration
+│   │   ├── Extensions/
+│   │   │   └── DbContextExtensions.cs   # Multi-database support
 │   │   └── Dapper/
 │   │       ├── IDapperContext.cs
 │   │       ├── BaseDapperRepository.cs
-│   │       ├── Extensions/
-│   │       └── Models/
+│   │       └── ...
 │   └── ...
 └── Modules/
     ├── Merchant/
@@ -267,11 +330,15 @@ CardMerchantSystem/
     │   │   └── ...
     │   ├── Merchant.Application/
     │   └── Merchant.Infrastructure/
-    │       ├── Data/
+    │       ├── Persistence/
+    │       │   ├── MerchantDbContext.cs # Multi-DB support
+    │       │   ├── Configurations/       # EF Core configs
+    │       │   ├── Migrations/
+    │       │   │   ├── SqlServer/
+    │       │   │   └── PostgreSql/
     │       │   └── Dapper/
     │       │       └── MerchantDapperContext.cs
-    │       └── Repositories/
-    │           └── MerchantDapperRepository.cs
+    │       └── ...
     └── ... (17 modül)
 ```
 
@@ -279,33 +346,34 @@ CardMerchantSystem/
 
 ## 📝 Geliştirici Notları
 
-### Controller Oluşturma
-```csharp
-[Authorize(Policy = Policies.XxxManagement)]
-public class XxxController : ApiControllerBase
-{
-    [HttpGet("{id:guid}")]
-    public async Task<ActionResult<XxxDto>> GetById(Guid id, CancellationToken ct)
-    {
-        var result = await _mediator.Send(new GetXxxByIdQuery(id), ct);
-        return Ok(HandleNotFound(result, "Xxx", id));
-    }
+### Database Provider Değiştirme
 
-    [HttpPost]
-    public async Task<ActionResult<XxxDto>> Create([FromBody] CreateXxxDto dto, CancellationToken ct)
-    {
-        var result = await _mediator.Send(new CreateXxxCommand(dto), ct);
-        var value = HandleResult(result);
-        return CreatedResponse(nameof(GetById), new { id = value.Id }, value);
-    }
+1. `appsettings.json` düzenle:
+```json
+{
+  "Database": {
+    "Provider": "PostgreSql"  // veya "SqlServer"
+  }
 }
 ```
 
-### Exception Kullanımı
-```csharp
-throw new NotFoundException("Entity", id);
-throw new BusinessRuleException("Hata mesajı");
-throw new ConflictException("Kayıt zaten mevcut");
+2. Uygulamayı yeniden başlat
+3. Migration gerekiyorsa çalıştır
+
+### Yeni Migration Oluşturma
+
+**SQL Server:**
+```powershell
+# appsettings.json: Provider = "SqlServer"
+Add-Migration MigrationName_SqlServer -Context XxxDbContext -OutputDir Persistence\Migrations\SqlServer
+Update-Database -Context XxxDbContext
+```
+
+**PostgreSQL:**
+```powershell
+# appsettings.json: Provider = "PostgreSql"
+Add-Migration MigrationName_PostgreSql -Context XxxDbContext -OutputDir Persistence\Migrations\PostgreSql
+Update-Database -Context XxxDbContext
 ```
 
 ### Loglama Kullanımı
@@ -332,19 +400,28 @@ public class MyHandler : IRequestHandler<MyCommand, Result>
 }
 ```
 
+### Exception Kullanımı
+```csharp
+throw new NotFoundException("Entity", id);
+throw new BusinessRuleException("Hata mesajı");
+throw new ConflictException("Kayıt zaten mevcut");
+```
+
 ---
 
 ## 🐳 Docker Compose
 
 ### Servisler
 ```yaml
-# Elasticsearch + Kibana
+# PostgreSQL + Elasticsearch + Kibana
 docker-compose up -d
-
-# Servisler:
-- Elasticsearch: http://localhost:9200
-- Kibana: http://localhost:5601
 ```
+
+**Servis URL'leri:**
+- PostgreSQL: `localhost:5432`
+- PgAdmin: `http://localhost:5050`
+- Elasticsearch: `http://localhost:9200`
+- Kibana: `http://localhost:5601`
 
 ### Komutlar
 ```bash
@@ -359,7 +436,21 @@ docker-compose logs -f
 
 # Durum kontrolü
 docker-compose ps
+
+# Specific servis restart
+docker-compose restart postgres
 ```
+
+### PgAdmin Bağlantısı
+
+**Docker içindeki PgAdmin:**
+- Host: `postgres` (container name)
+
+**Lokal PgAdmin:**
+- Host: `localhost`
+- Port: `5432`
+- User: `postgres`
+- Password: `postgres`
 
 ---
 
@@ -369,12 +460,22 @@ docker-compose ps
 
 1. **Discover**: http://localhost:5601
 2. Index pattern: `cardmerchant-logs-*`
-3. **Filtreler:**
+3. **KQL Sorguları:**
 ```
+# Merchant endpoint'leri
 fields.RequestPath: "/api/merchant*"
+
+# Error'lar
 level: "Error"
+
+# Yavaş requestler
 fields.Elapsed > 1000
+
+# Belirli kullanıcı
 fields.Username: "admin"
+
+# Database provider
+fields.DatabaseProvider: "PostgreSql"
 ```
 
 ### Performance Metrikleri
@@ -383,10 +484,54 @@ fields.Username: "admin"
 - Response time distribution
 - Error rate
 - Slow queries (>100ms)
+- Database provider usage
 - User activity
+
+---
+
+## 🔧 Sorun Giderme
+
+### PostgreSQL Bağlantı Hatası
+```bash
+# PostgreSQL çalışıyor mu?
+docker ps | grep postgres
+
+# PostgreSQL logları
+docker logs cardmerchant-postgres
+
+# PostgreSQL yeniden başlat
+docker-compose restart postgres
+
+# Connection test
+docker exec -it cardmerchant-postgres psql -U postgres
+```
+
+### Migration Hatası
+```powershell
+# Migration'ı kaldır
+Remove-Migration -Context MerchantDbContext
+
+# Yeniden oluştur
+Add-Migration InitialCreate_PostgreSql -Context MerchantDbContext -OutputDir Persistence\Migrations\PostgreSql
+
+# Database'i güncelle
+Update-Database -Context MerchantDbContext
+```
+
+### "uniqueidentifier" Hatası
+
+Bu SQL Server type'ı PostgreSQL'de yok. Çözüm:
+
+1. Migration'ı kaldır
+2. `appsettings.json`'da provider'ın `PostgreSql` olduğundan emin ol
+3. Migration'ı yeniden oluştur (otomatik `uuid` kullanacak)
 
 ---
 
 ## 📄 Lisans
 
 Bu proje eğitim amaçlıdır.
+
+
+**Son Güncelleme:** 24 Ocak 2026
+**Versiyon:** 1.3.0

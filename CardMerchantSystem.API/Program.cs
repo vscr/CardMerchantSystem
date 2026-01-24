@@ -1,5 +1,4 @@
-﻿// CardMerchantSystem.API/Program.cs
-
+﻿
 using Accounting.Application;
 using Accounting.Infrastructure;
 using BKM.Application;
@@ -16,6 +15,7 @@ using CardMerchantSystem.API.Auth.Services;
 using CardMerchantSystem.API.Jobs;
 using CardMerchantSystem.API.Middleware;
 using CardMerchantSystem.API.Services;
+using CardMerchantSystem.Shared.Data;
 using CardMerchantSystem.Shared.Data.Dapper.Extensions;
 using Courier.Application;
 using Courier.Infrastructure;
@@ -67,6 +67,22 @@ try
     Log.Information("Starting CardMerchantSystem API...");
 
     var builder = WebApplication.CreateBuilder(args);
+
+    // ══════════════════════════════════════════════════════════════
+    // DATABASE CONFIGURATION
+    // ══════════════════════════════════════════════════════════════
+    var databaseOptions = builder.Configuration
+        .GetSection(DatabaseOptions.SectionName)
+        .Get<DatabaseOptions>() ?? new DatabaseOptions();
+
+    Log.Information("Using database provider: {Provider}", databaseOptions.Provider);
+    Log.Information("Connection string: {ConnectionString}",
+        databaseOptions.GetConnectionString().Substring(0, Math.Min(50, databaseOptions.GetConnectionString().Length)) + "...");
+
+    // Database options'ı servislere ekle
+    builder.Services.Configure<DatabaseOptions>(
+        builder.Configuration.GetSection(DatabaseOptions.SectionName));
+
 
     // ══════════════════════════════════════════════════════════════
     // SERILOG CONFIGURATION
@@ -232,7 +248,8 @@ try
 
     // Merchant Module
     builder.Services.AddMerchantApplication();
-    builder.Services.AddMerchantInfrastructure(connectionString);
+    builder.Services.AddMerchantInfrastructure(builder.Configuration);
+
 
     // Transaction Module
     builder.Services.AddTransactionApplication();
@@ -411,6 +428,9 @@ try
         {
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "Card Merchant System API v1");
         });
+
+        using var scope = app.Services.CreateScope();
+        await MigrationHelper.MigrateAllDatabasesAsync(scope.ServiceProvider);
     }
 
     app.UseHttpsRedirection();
