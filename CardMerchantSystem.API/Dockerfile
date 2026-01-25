@@ -6,17 +6,17 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy solution
+# Copy solution file
 COPY ["CardMerchantSystem.sln", "./"]
 
-# Copy project files
-COPY ["CardMerchantSystem.API/CardMerchantSystem.API.csproj", "CardMerchantSystem.API/"]
-COPY ["CardMerchantSystem.Shared/CardMerchantSystem.Shared.csproj", "CardMerchantSystem.Shared/"]
+# Copy all csproj files (basit yaklaþým - tüm csproj'leri kopyala)
+COPY ["CardMerchantSystem.API/*.csproj", "CardMerchantSystem.API/"]
+COPY ["CardMerchantSystem.Shared/*.csproj", "CardMerchantSystem.Shared/"]
 
 # Restore
 RUN dotnet restore "CardMerchantSystem.API/CardMerchantSystem.API.csproj"
 
-# Copy everything
+# Copy everything else
 COPY . .
 
 # Build
@@ -27,7 +27,7 @@ RUN dotnet build "CardMerchantSystem.API.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "CardMerchantSystem.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Final
+# Final stage
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
