@@ -2,13 +2,14 @@ name: CD - Deploy to Docker Hub
 
 on:
   push:
-    branches: [ CI/CD ]  # Geçici - listelenmesi için
+    branches: [ CI/CD ]
   workflow_dispatch:
     inputs:
       environment:
         description: 'Deploy to which environment?'
         required: true
         type: choice
+        default: 'development'
         options:
           - development
           - staging
@@ -27,10 +28,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    - name: Set environment variables
+      run: |
+        # Manuel tetiklemede input'ları kullan, push'ta default değerler
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          echo "DOCKER_TAG=${{ github.event.inputs.docker_tag }}" >> $GITHUB_ENV
+        else
+          echo "ENVIRONMENT=development" >> $GITHUB_ENV
+          echo "DOCKER_TAG=latest" >> $GITHUB_ENV
+        fi
+    
     - name: 🚀 Deployment Info
       run: |
-        echo "Environment: ${{ github.event.inputs.environment }}"
-        echo "Tag: ${{ github.event.inputs.docker_tag }}"
+        echo "Event: ${{ github.event_name }}"
+        echo "Environment: ${{ env.ENVIRONMENT }}"
+        echo "Tag: ${{ env.DOCKER_TAG }}"
         echo "By: ${{ github.actor }}"
         echo "Commit: ${{ github.sha }}"
     
@@ -50,16 +63,20 @@ jobs:
         file: ./CardMerchantSystem.API/Dockerfile
         push: true
         tags: |
-          ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ github.event.inputs.docker_tag }}
-          ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ github.event.inputs.environment }}
+          ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ env.DOCKER_TAG }}
+          ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ env.ENVIRONMENT }}
+          ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ github.sha }}
         cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:buildcache
         cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:buildcache,mode=max
     
     - name: ✅ Deploy Summary
       run: |
-        echo "Docker image pushed successfully!"
+        echo "✅ Docker image pushed successfully!"
         echo ""
-        echo "Image: ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ github.event.inputs.docker_tag }}"
+        echo "📦 Images:"
+        echo "  - ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ env.DOCKER_TAG }}"
+        echo "  - ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ env.ENVIRONMENT }}"
+        echo "  - ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ github.sha }}"
         echo ""
-        echo "Pull command:"
-        echo "docker pull ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ github.event.inputs.docker_tag }}"
+        echo "🐳 Pull command:"
+        echo "  docker pull ${{ secrets.DOCKER_USERNAME }}/cardmerchant-api:${{ env.DOCKER_TAG }}"
