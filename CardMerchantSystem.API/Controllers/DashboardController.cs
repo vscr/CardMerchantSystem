@@ -3,10 +3,12 @@ using CardMerchantSystem.API.Models;
 using CardMerchantSystem.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CardMerchantSystem.API.Controllers;
 
 [Authorize(Policy = Policies.ViewerOrAbove)]
+[EnableRateLimiting("Relaxed")]
 public class DashboardController : ApiControllerBase
 {
     private readonly IDashboardService _dashboardService;

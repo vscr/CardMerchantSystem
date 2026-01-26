@@ -12,11 +12,13 @@ using Card.Infrastructure;
 using CardMerchantSystem.API.Auth.Constants;
 using CardMerchantSystem.API.Auth.Persistence;
 using CardMerchantSystem.API.Auth.Services;
+using CardMerchantSystem.API.Configuration;
 using CardMerchantSystem.API.Jobs;
 using CardMerchantSystem.API.Middleware;
 using CardMerchantSystem.API.Services;
 using CardMerchantSystem.Shared.Data;
 using CardMerchantSystem.Shared.Data.Dapper.Extensions;
+using CardMerchantSystem.Shared.Resilience;
 using Courier.Application;
 using Courier.Infrastructure;
 using Dispute.Application;
@@ -311,6 +313,12 @@ try
     builder.Services.AddWorkOrderApplication();
     builder.Services.AddWorkOrderInfrastructure(connectionString);
 
+    // Resilience Services
+    builder.Services.AddResilienceServices(builder.Configuration);
+
+    // Rate Limiting
+    builder.Services.AddRateLimitingServices();
+
     Log.Information("All modules registered successfully");
 
     // ══════════════════════════════════════════════════════════════
@@ -417,6 +425,12 @@ try
     // GLOBAL EXCEPTION HANDLER
     // ══════════════════════════════════════════════════════════════
     app.UseGlobalExceptionHandler();
+
+
+    // ══════════════════════════════════════════════════════════════
+    // USE RATE LIMITER
+    // ══════════════════════════════════════════════════════════════
+    app.UseRateLimiter();
 
     // ══════════════════════════════════════════════════════════════
     // PIPELINE

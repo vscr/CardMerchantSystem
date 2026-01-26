@@ -1,4 +1,6 @@
-﻿using Merchant.Domain.Entities;
+﻿using CardMerchantSystem.Shared.Kernel;
+using CardMerchantSystem.Shared.Resilience;
+using Merchant.Domain.Entities;
 using Merchant.Domain.Enums;
 using Merchant.Domain.Repositories;
 using Merchant.Domain.ValueObjects;
@@ -10,10 +12,20 @@ namespace Merchant.Infrastructure.Repositories;
 public class MerchantRepository : IMerchantRepository
 {
     private readonly MerchantDbContext _context;
+    private readonly IResilientService _resilientService;
 
-    public MerchantRepository(MerchantDbContext context)
+    public MerchantRepository(MerchantDbContext context, IResilientService resilientService)
     {
         _context = context;
+        _resilientService = resilientService;
+    }
+
+    public async Task<MerchantAggregate?> GetByIdWithRetryAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return await _resilientService.ExecuteAsync(async () =>
+        {
+            return await _context.Merchants.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        }, $"GetEntity:{id}");
     }
 
     public async Task<MerchantAggregate?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

@@ -4,9 +4,12 @@ using CardMerchantSystem.API.Auth.Services;
 using CardMerchantSystem.Shared.Kernel.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CardMerchantSystem.API.Controllers;
 
+
+[EnableRateLimiting("Strict")]
 public class AuthController : ApiControllerBase
 {
     private readonly IAuthService _authService;

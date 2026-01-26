@@ -1,4 +1,5 @@
-﻿using Merchant.Domain.Entities;
+﻿using CardMerchantSystem.Shared.Kernel;
+using Merchant.Domain.Entities;
 using Merchant.Domain.Enums;
 using Merchant.Domain.ValueObjects;
 
@@ -9,6 +10,7 @@ namespace Merchant.Domain.Repositories;
 /// </summary>
 public interface IMerchantRepository
 {
+    Task<MerchantAggregate?> GetByIdWithRetryAsync(Guid id, CancellationToken cancellationToken);
     Task<MerchantAggregate?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<MerchantAggregate?> GetByIdWithTerminalsAsync(Guid id, CancellationToken cancellationToken = default);
