@@ -3,12 +3,12 @@ using System;
 using Merchant.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
+namespace Merchant.Infrastructure.Persistence.Migrations.SqlServer
 {
     [DbContext(typeof(MerchantDbContext))]
     partial class MerchantDbContextModelSnapshot : ModelSnapshot
@@ -18,98 +18,98 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.11")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Merchant.Domain.Entities.MerchantAggregate", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("ApprovedBy")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("City")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("CommissionRate")
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<DateTime?>("ContractEndDate")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("ContractStartDate")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("District")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("MerchantType")
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("MerchantTypeId");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("StatusId");
 
                     b.Property<string>("TaxOffice")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("TradeName")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -117,49 +117,49 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
 
                     b.HasIndex("Email");
 
-                    b.ToTable("Merchants", "public");
+                    b.ToTable("Merchants", "dbo");
                 });
 
             modelBuilder.Entity("Merchant.Domain.Entities.Terminal", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("InstalledAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("InstalledBy")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Location")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<Guid>("MerchantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Model")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("SerialNumber")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("StatusId");
 
                     b.Property<int>("TerminalType")
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("TerminalTypeId");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -169,7 +169,7 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
 
                     b.HasIndex("Status");
 
-                    b.ToTable("Terminals", "public");
+                    b.ToTable("Terminals", "dbo");
                 });
 
             modelBuilder.Entity("Merchant.Domain.Entities.MerchantAggregate", b =>
@@ -177,17 +177,17 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
                     b.OwnsOne("Merchant.Domain.ValueObjects.IBAN", "IBAN", b1 =>
                         {
                             b1.Property<Guid>("MerchantAggregateId")
-                                .HasColumnType("uuid");
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("Value")
                                 .IsRequired()
                                 .HasMaxLength(26)
-                                .HasColumnType("character varying(26)")
+                                .HasColumnType("nvarchar(26)")
                                 .HasColumnName("IBAN");
 
                             b1.HasKey("MerchantAggregateId");
 
-                            b1.ToTable("Merchants", "public");
+                            b1.ToTable("Merchants", "dbo");
 
                             b1.WithOwner()
                                 .HasForeignKey("MerchantAggregateId");
@@ -196,12 +196,12 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
                     b.OwnsOne("Merchant.Domain.ValueObjects.MerchantCode", "MerchantCode", b1 =>
                         {
                             b1.Property<Guid>("MerchantAggregateId")
-                                .HasColumnType("uuid");
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("Value")
                                 .IsRequired()
                                 .HasMaxLength(15)
-                                .HasColumnType("character varying(15)")
+                                .HasColumnType("nvarchar(15)")
                                 .HasColumnName("MerchantCode");
 
                             b1.HasKey("MerchantAggregateId");
@@ -209,7 +209,7 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
                             b1.HasIndex("Value")
                                 .IsUnique();
 
-                            b1.ToTable("Merchants", "public");
+                            b1.ToTable("Merchants", "dbo");
 
                             b1.WithOwner()
                                 .HasForeignKey("MerchantAggregateId");
@@ -218,12 +218,12 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
                     b.OwnsOne("Merchant.Domain.ValueObjects.TaxNumber", "TaxNumber", b1 =>
                         {
                             b1.Property<Guid>("MerchantAggregateId")
-                                .HasColumnType("uuid");
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("Value")
                                 .IsRequired()
                                 .HasMaxLength(10)
-                                .HasColumnType("character varying(10)")
+                                .HasColumnType("nvarchar(10)")
                                 .HasColumnName("TaxNumber");
 
                             b1.HasKey("MerchantAggregateId");
@@ -231,7 +231,7 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
                             b1.HasIndex("Value")
                                 .IsUnique();
 
-                            b1.ToTable("Merchants", "public");
+                            b1.ToTable("Merchants", "dbo");
 
                             b1.WithOwner()
                                 .HasForeignKey("MerchantAggregateId");
@@ -258,12 +258,12 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
                     b.OwnsOne("Merchant.Domain.ValueObjects.TerminalId", "TerminalCode", b1 =>
                         {
                             b1.Property<Guid>("TerminalId")
-                                .HasColumnType("uuid");
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("Value")
                                 .IsRequired()
                                 .HasMaxLength(20)
-                                .HasColumnType("character varying(20)")
+                                .HasColumnType("nvarchar(20)")
                                 .HasColumnName("TerminalCode");
 
                             b1.HasKey("TerminalId");
@@ -271,7 +271,7 @@ namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
                             b1.HasIndex("Value")
                                 .IsUnique();
 
-                            b1.ToTable("Terminals", "public");
+                            b1.ToTable("Terminals", "dbo");
 
                             b1.WithOwner()
                                 .HasForeignKey("TerminalId");

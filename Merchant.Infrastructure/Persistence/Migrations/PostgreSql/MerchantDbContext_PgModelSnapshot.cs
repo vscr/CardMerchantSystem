@@ -3,7 +3,6 @@ using System;
 using Merchant.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,12 +10,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Merchant.Infrastructure.Persistence.Migrations.PostgreSql
 {
-    [DbContext(typeof(MerchantDbContext))]
-    [Migration("20260124134915_InitialCreate_PostgreSql")]
-    partial class InitialCreate_PostgreSql
+    [DbContext(typeof(MerchantDbContext_Pg))]
+    partial class MerchantDbContext_PgModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

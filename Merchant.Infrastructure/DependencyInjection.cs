@@ -1,12 +1,10 @@
-﻿
-using CardMerchantSystem.Shared.Data;
-using CardMerchantSystem.Shared.Data.Extensions;
-using Merchant.Domain.Repositories;
-using Merchant.Infrastructure.Data.Dapper;
-using Merchant.Infrastructure.Persistence;
-using Merchant.Infrastructure.Repositories;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Merchant.Infrastructure.Persistence;
+using Merchant.Infrastructure.Repositories;
+using Merchant.Domain.Repositories;
+using CardMerchantSystem.Shared.Data;
 
 namespace Merchant.Infrastructure;
 
@@ -16,29 +14,29 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Database options
         var databaseOptions = configuration
             .GetSection(DatabaseOptions.SectionName)
             .Get<DatabaseOptions>() ?? new DatabaseOptions();
 
-        var connectionString = databaseOptions.GetConnectionString();
-        var provider = databaseOptions.Provider;
-
-        // DbContext
-        services.AddDbContext<MerchantDbContext>(options =>
+        if (databaseOptions.Provider == DatabaseProvider.PostgreSql)
         {
-            options.ConfigureDatabase(provider, connectionString);
-        });
+            services.AddDbContext<MerchantDbContext_Pg>(options =>
+                options.UseNpgsql(databaseOptions.PostgreSqlConnection));
 
-        // Dapper Context
-        services.AddScoped<CardMerchantSystem.Shared.Data.Dapper.IDapperContext>(sp =>
+            services.AddScoped<MerchantDbContextBase>(sp =>
+                sp.GetRequiredService<MerchantDbContext_Pg>());
+        }
+        else
         {
-            return new MerchantDapperContext(configuration);
-        });
+            services.AddDbContext<MerchantDbContext>(options =>
+                options.UseSqlServer(databaseOptions.SqlServerConnection));
 
-        // Repositories
+            services.AddScoped<MerchantDbContextBase>(sp =>
+                sp.GetRequiredService<MerchantDbContext>());
+        }
+
+        // Repositories (Base context kullanır)
         services.AddScoped<IMerchantRepository, MerchantRepository>();
-        services.AddScoped<IMerchantDapperRepository, MerchantDapperRepository>();
 
         return services;
     }

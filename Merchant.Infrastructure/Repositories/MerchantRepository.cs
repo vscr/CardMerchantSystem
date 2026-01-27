@@ -11,10 +11,10 @@ namespace Merchant.Infrastructure.Repositories;
 
 public class MerchantRepository : IMerchantRepository
 {
-    private readonly MerchantDbContext _context;
+    private readonly MerchantDbContextBase _context;
     private readonly IResilientService _resilientService;
 
-    public MerchantRepository(MerchantDbContext context, IResilientService resilientService)
+    public MerchantRepository(MerchantDbContextBase context, IResilientService resilientService)
     {
         _context = context;
         _resilientService = resilientService;
