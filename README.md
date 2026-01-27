@@ -78,8 +78,9 @@ dotnet run --project CardMerchantSystem.API
 ## 📊 Proje Durumu
 
 **Backend Modülleri:** 17/19 tamamlandı (%89)
-**Mimari Geliştirmeler:** 4/6 tamamlandı (%67)
+**Mimari Geliştirmeler:** 7/9 tamamlandı (%78)
 **Database Support:** SQL Server + PostgreSQL
+**Resilience:** Polly + Rate Limiting ✅
 
 > Detaylı durum için: [PROJECT_STATUS.md](PROJECT_STATUS.md)
 
@@ -218,6 +219,8 @@ public class CardsController : ApiControllerBase
 | Auth | JWT + BCrypt |
 | Validation | FluentValidation |
 | Mediator | MediatR 12 |
+| Resilience | Polly 8.x (Retry, Circuit Breaker, Timeout) |
+| Rate Limiting | .NET 8 Built-in Rate Limiter |
 | Logging | Serilog + Elasticsearch + Kibana |
 | Containerization | Docker Compose |
 
@@ -533,5 +536,5 @@ Bu SQL Server type'ı PostgreSQL'de yok. Çözüm:
 Bu proje eğitim amaçlıdır.
 
 
-**Son Güncelleme:** 24 Ocak 2026
-**Versiyon:** 1.3.0
+**Son Güncelleme:** 27 Ocak 2026
+**Versiyon:** 1.4.0

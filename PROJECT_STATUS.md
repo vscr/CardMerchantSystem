@@ -1,6 +1,6 @@
 ﻿# Card Merchant System - Proje Durumu
 
-> Son Güncelleme: 24 Ocak 2026
+> Son Güncelleme: 27 Ocak 2026
 
 ---
 
@@ -9,8 +9,9 @@
 | Kategori | Tamamlanan | Toplam | Yüzde |
 |----------|------------|--------|-------|
 | Backend Modülleri | 17 | 19 | %89 |
-| Mimari Geliştirmeler | 5 | 7 | %71 |
+| Mimari Geliştirmeler | 7 | 9 | %78 |
 | Database Support | 2 | 2 | %100 |
+| Resilience & Rate Limiting | 2 | 2 | %100 |
 
 ---
 
@@ -56,12 +57,162 @@
 | 3 | Structured Logging | ✅ | Serilog + Elasticsearch + Kibana |
 | 4 | CQRS with Dapper | ✅ | Read (Dapper) / Write (EF Core) separation |
 | 5 | Multi-Database Support | ✅ | SQL Server + PostgreSQL |
-| 6 | Validation Pipeline | ⏳ | MediatR FluentValidation behavior |
-| 7 | Audit Trail | ⏳ | Entity değişiklik takibi |
+| 6 | **Polly Resilience** | ✅ | Retry, Circuit Breaker, Timeout policies |
+| 7 | **Rate Limiting** | ✅ | .NET 8 built-in rate limiter, 5 policy |
+| 8 | Validation Pipeline | ⏳ | MediatR FluentValidation behavior |
+| 9 | Audit Trail | ⏳ | Entity değişiklik takibi |
 
 ---
 
-## 🗄️ Database Support (YENİ)
+## 🔄 Resilience Patterns (Polly) - YENİ
+
+### Yapılandırma
+
+**appsettings.json:**
+```json
+{
+  "Resilience": {
+    "Retry": {
+      "MaxRetryAttempts": 3,
+      "BaseDelaySeconds": 2
+    },
+    "CircuitBreaker": {
+      "EventsAllowedBeforeBreaking": 5,
+      "DurationOfBreakSeconds": 30
+    },
+    "Timeout": {
+      "DefaultTimeoutSeconds": 30,
+      "LongRunningTimeoutSeconds": 120
+    }
+  }
+}
+```
+
+### Polly Policies
+
+| Policy | Açıklama | Parametreler |
+|--------|----------|--------------|
+| **Retry** | Exponential backoff retry | 3 deneme, 2^n saniye bekleme |
+| **Circuit Breaker** | Hata durumunda devreyi aç | 5 hata → 30s break |
+| **Timeout** | İşlem timeout'u | Default: 30s, Long: 120s |
+| **Combined** | Retry + CB + Timeout | Tüm politikalar birleşik |
+
+### Kullanım
+
+**HTTP Client için:**
+```csharp
+// Combined policy (Retry + Circuit Breaker + Timeout)
+var policy = ResiliencePolicies.GetCombinedHttpPolicy(
+    retryCount: 3,
+    circuitBreakerThreshold: 5,
+    circuitBreakerDurationSeconds: 30,
+    timeoutSeconds: 30
+);
+
+// HttpClient ile kullanım
+services.AddHttpClient<IBkmApiClient, BkmApiClient>()
+    .AddPolicyHandler(policy);
+```
+
+**Genel servisler için:**
+```csharp
+// Inject et
+private readonly IResilientService _resilientService;
+
+// Kullan
+var result = await _resilientService.ExecuteWithRetryAsync(
+    async () => await _externalService.CallAsync(),
+    maxRetries: 3
+);
+```
+
+### Dosya Yapısı
+
+```
+CardMerchantSystem.Shared/
+└── Resilience/
+    ├── ResilienceSettings.cs       # Configuration POCO
+    ├── ResiliencePolicies.cs       # Static policy factory
+    ├── IResilientService.cs        # Service interface
+    ├── ResilientService.cs         # Service implementation
+    ├── IResilientHttpClient.cs     # HTTP client interface
+    └── DependencyInjection.cs      # DI registration
+```
+
+---
+
+## ⚡ Rate Limiting - YENİ
+
+### Rate Limit Policies
+
+| Policy | Limit | Süre | Algoritma | Kullanım |
+|--------|-------|------|-----------|----------|
+| **Global** | 100 istek | 1 dk | Fixed Window | Tüm API (IP bazlı) |
+| **Strict** | 5 istek | 1 dk | Fixed Window | Login, Register |
+| **Standard** | 60 istek | 1 dk | Fixed Window | Normal CRUD |
+| **Relaxed** | 200 istek | 1 dk | Fixed Window | Dashboard, Listeler |
+| **PerUser** | 100 token | 1 dk | Token Bucket | Kullanıcı bazlı |
+| **Transaction** | 30 istek | 1 dk | Sliding Window | Finansal işlemler |
+
+### Controller Uygulaması
+
+```csharp
+// AuthController - Strict policy
+[EnableRateLimiting("Strict")]
+public class AuthController : ApiControllerBase
+
+// CardApplicationsController - Standard policy
+[EnableRateLimiting("Standard")]
+public class CardApplicationsController : ApiControllerBase
+
+// DashboardController - Relaxed policy
+[EnableRateLimiting("Relaxed")]
+public class DashboardController : ApiControllerBase
+
+// TransactionsController - Transaction policy
+[EnableRateLimiting("Transaction")]
+public class TransactionsController : ApiControllerBase
+```
+
+### 429 Response Format
+
+```json
+{
+  "code": "RATE_LIMIT_EXCEEDED",
+  "message": "Çok fazla istek gönderdiniz. Lütfen bekleyin.",
+  "retryAfter": 60
+}
+```
+
+### Yapılandırma
+
+**appsettings.json:**
+```json
+{
+  "RateLimiting": {
+    "Global": {
+      "PermitLimit": 100,
+      "WindowMinutes": 1
+    },
+    "Strict": {
+      "PermitLimit": 5,
+      "WindowMinutes": 1
+    },
+    "Standard": {
+      "PermitLimit": 60,
+      "WindowMinutes": 1
+    }
+  }
+}
+```
+
+### Dosya Yapısı
+
+```
+CardMerchantSystem.API/
+└── Configuration/
+    └── RateLimitingConfiguration.cs  # Rate limiter setup
+```
 
 ### Desteklenen Veritabanları
 
@@ -330,6 +481,8 @@ docker-compose ps
 | Password Hashing | BCrypt |
 | Validation | FluentValidation |
 | Mediator | MediatR 12 |
+| Resilience | Polly 8.x (Retry, Circuit Breaker, Timeout) |
+| Rate Limiting | .NET 8 Built-in Rate Limiter |
 | Logging | Serilog 8.0.1 |
 | Log Storage | Elasticsearch 8.11.0 |
 | Log Visualization | Kibana 8.11.0 |
@@ -351,6 +504,8 @@ CardMerchantSystem/
 │   │   │   ├── GlobalExceptionMiddleware.cs
 │   │   │   ├── CorrelationIdMiddleware.cs
 │   │   │   └── RequestResponseLoggingMiddleware.cs
+│   │   ├── Configuration/
+│   │   │   └── RateLimitingConfiguration.cs  # Rate limiter setup
 │   │   ├── Jobs/
 │   │   └── Program.cs                 # Serilog + Multi-DB config
 │   ├── CardMerchantSystem.Shared/
@@ -363,6 +518,12 @@ CardMerchantSystem/
 │   │   │       ├── IDapperContext.cs
 │   │   │       ├── BaseDapperRepository.cs
 │   │   │       └── ...
+│   │   ├── Resilience/                # Polly patterns
+│   │   │   ├── ResilienceSettings.cs
+│   │   │   ├── ResiliencePolicies.cs
+│   │   │   ├── IResilientService.cs
+│   │   │   ├── ResilientService.cs
+│   │   │   └── DependencyInjection.cs
 │   │   └── Kernel/
 │   └── Modules/
 │       ├── Merchant/
@@ -491,16 +652,18 @@ Update-Database -Context XxxDbContext
 ### Kısa Vadeli (1-2 Hafta)
 1. ✅ Multi-database support (SQL Server + PostgreSQL) - **TAMAMLANDI**
 2. ✅ Dapper entegrasyonu - Merchant modülü - **TAMAMLANDI**
-3. ⏳ Diğer modüllere PostgreSQL migration'ları (Transaction, Card, vb.)
-4. ⏳ Handler'lara loglama ekle
-5. ⏳ Performance karşılaştırması (SQL Server vs PostgreSQL)
+3. ✅ Polly Resilience Patterns - **TAMAMLANDI**
+4. ✅ Rate Limiting (.NET 8 built-in) - **TAMAMLANDI**
+5. ⏳ Diğer modüllere PostgreSQL migration'ları (Transaction, Card, vb.)
+6. ⏳ Controller'lara Rate Limiting attribute'ları ekle
+7. ⏳ Caching (Redis/Memory) - Cache abstraction
 
 ### Orta Vadeli (1 Ay)
-1. Validation Pipeline - MediatR behavior
-2. Audit Trail - Entity değişiklik takibi
-3. Health Checks - API ve DB sağlık kontrolü
+1. Health Checks - API ve DB sağlık kontrolü
+2. Validation Pipeline - MediatR behavior
+3. Audit Trail - Entity değişiklik takibi
 4. Kibana dashboard'ları oluştur
-5. Redis caching optimization
+5. Performance karşılaştırması (SQL Server vs PostgreSQL)
 
 ### Uzun Vadeli
 1. Kalan modüller (InstantCardPrint, Inventory)
@@ -533,8 +696,8 @@ Update-Database -Context XxxDbContext
 **Yeni chat açıldığında:**
 Bu dosyayı ve README.md'yi paylaşarak devam edilebilir.
 
-**Son Güncelleme:** 24 Ocak 2026
-**Versiyon:** 1.3.0
+**Son Güncelleme:** 27 Ocak 2026
+**Versiyon:** 1.4.0
 
 ---
 
@@ -546,6 +709,10 @@ Bu dosyayı ve README.md'yi paylaşarak devam edilebilir.
 - [x] Structured logging (Serilog + Elasticsearch + Kibana)
 - [x] Role-based authorization
 - [x] Docker containerization
+- [x] Polly resilience patterns (Retry, Circuit Breaker, Timeout)
+- [x] Rate Limiting (.NET 8 built-in)
+- [ ] Health Checks
+- [ ] Caching (Redis/Memory)
 - [ ] Production deployment
 - [ ] Load testing
 - [ ] CI/CD pipeline

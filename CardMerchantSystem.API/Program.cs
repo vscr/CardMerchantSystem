@@ -444,7 +444,7 @@ try
         });
 
         using var scope = app.Services.CreateScope();
-        await MigrationHelper.MigrateAllDatabasesAsync(scope.ServiceProvider);
+        //await MigrationHelper.MigrateAllDatabasesAsync(scope.ServiceProvider);
     }
 
     app.UseHttpsRedirection();
