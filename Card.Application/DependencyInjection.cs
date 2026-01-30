@@ -1,8 +1,4 @@
 ﻿using Card.Application.Behaviors;
-using Card.Application.Commands;
-using Card.Application.DTOs;
-using Card.Application.Queries;
-using Card.Application.Validators;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
