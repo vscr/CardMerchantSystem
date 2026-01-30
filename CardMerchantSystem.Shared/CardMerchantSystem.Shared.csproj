@@ -30,7 +30,7 @@
 	  <!-- Dapper -->
 	  <PackageReference Include="Dapper" Version="2.1.28" />
 	  <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.5" />
-	  <PackageReference Include="Npgsql" Version="8.0.0" />
+	  <PackageReference Include="Npgsql" Version="8.0.8" />
 
 	  <!-- MediatR -->
 	  <PackageReference Include="MediatR" Version="12.2.0" />

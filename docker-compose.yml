@@ -87,11 +87,32 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      
+  # ═══════════════════════════════════════════════════════
+  # REDIS
+  # ═══════════════════════════════════════════════════════
+  redis:
+    image: redis:7-alpine
+    container_name: cardmerchant-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - cardmerchant-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   elasticsearch-data:
     driver: local
   postgres-data:
+    driver: local
+  redis-data:
     driver: local
 
 networks:
