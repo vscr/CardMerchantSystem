@@ -1,6 +1,7 @@
 ﻿using Card.Domain.Enums;
 using Card.Domain.Events;
 using Card.Domain.ValueObjects;
+using CardMerchantSystem.Shared.Events;
 using CardMerchantSystem.Shared.Kernel;
 
 namespace Card.Domain.Entities;
@@ -129,10 +130,18 @@ public class CardApplication : AggregateRoot
         Status = CardApplicationStatus.Approved;
         ApprovedBy = approverUsername;
         ApprovedAt = DateTime.UtcNow;
-        //AddStatusHistory("Başvuru onaylandı", approverUsername);
         MarkAsUpdated(approverUsername);
 
+        // Local event (Card modülü içinde dinlenir)
         AddDomainEvent(new CardApplicationApprovedEvent(Id, CustomerTckn.Value));
+
+        // Integration event (Diğer modüller dinler)
+        AddDomainEvent(new CardApplicationApprovedIntegrationEvent(
+            Id,
+            CustomerTckn.Value,
+            CustomerFullName,
+            CardType.Name
+        ));
 
         return Result.Success();
     }
@@ -196,7 +205,11 @@ public class CardApplication : AggregateRoot
         AddStatusHistory("Kart basıldı", operatorUsername);
         MarkAsUpdated(operatorUsername);
 
+        // Local event
         AddDomainEvent(new CardPrintedEvent(Id, maskedCardNumber));
+
+        // Integration event
+        AddDomainEvent(new CardPrintedIntegrationEvent(Id, maskedCardNumber));
 
         return Result.Success();
     }

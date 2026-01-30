@@ -1,7 +1,8 @@
-﻿using Merchant.Domain.Enums;
+﻿using CardMerchantSystem.Shared.Events;
+using CardMerchantSystem.Shared.Kernel;
+using Merchant.Domain.Enums;
 using Merchant.Domain.Events;
 using Merchant.Domain.ValueObjects;
-using CardMerchantSystem.Shared.Kernel;
 
 namespace Merchant.Domain.Entities;
 
@@ -143,7 +144,15 @@ public class MerchantAggregate : AggregateRoot
         ApprovedAt = DateTime.UtcNow;
         MarkAsUpdated(approverUsername);
 
+        // Local event
         AddDomainEvent(new MerchantApprovedEvent(Id, MerchantCode.Value));
+
+        // Integration event
+        AddDomainEvent(new MerchantApprovedIntegrationEvent(
+            Id,
+            MerchantCode.Value,
+            Name
+        ));
 
         return Result.Success();
     }
@@ -280,7 +289,16 @@ public class MerchantAggregate : AggregateRoot
         if (result.IsFailure)
             return result;
 
+        // Local event
         AddDomainEvent(new TerminalActivatedEvent(terminal.Id, terminal.TerminalCode.Value));
+
+        // Integration event
+        AddDomainEvent(new TerminalActivatedIntegrationEvent(
+            terminal.Id,
+            terminal.TerminalCode.Value,
+            Id,
+            MerchantCode.Value
+        ));
 
         return Result.Success();
     }
