@@ -6,8 +6,8 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 
 ## 🎯 Proje Özeti
 
-**Tamamlanma:** %89 (17/19 modül)  
-**Mimari:** Clean Architecture + DDD + CQRS  
+**Tamamlanma:** %92 (17/19 modül + Domain Events ✅)  
+**Mimari:** Clean Architecture + DDD + CQRS + Event-Driven  
 **Database:** SQL Server + PostgreSQL (Multi-DB)  
 **Resilience:** Polly + Rate Limiting + Redis Cache  
 **Monitoring:** Serilog + Elasticsearch + Kibana
@@ -20,19 +20,19 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 
 | Modül | Açıklama | Özel Özellik |
 |-------|----------|--------------|
-| **Card** | Kart başvuru, tahsis, limit | Domain Events (publish edilmiyor ⚠️) |
-| **Merchant** | Üye işyeri, terminal yönetimi | 🌟 Multi-DB (SQL Server + PostgreSQL)<br>🌟 CQRS (EF Core + Dapper) |
-| **Transaction** | İşlem, provizyon, LKS | 🌟 Polly Resilience<br>🌟 Redis Cache<br>🌟 Rate Limiting |
-| **Dispute** | İtiraz yönetimi | - |
-| **Campaign** | Kampanya, kural motoru | Rule Engine |
-| **BKM** | Switch entegrasyonu | External API Integration |
-| **HSM** | Güvenlik modülü (Thales, Gemalto) | Encryption/Decryption |
-| **Fee** | Ücret, aidat, tarife yönetimi | Complex calculations |
+| **Card** | Kart başvuru, tahsis, limit | 🌟 Domain Events (local + integration) |
+| **Merchant** | Üye işyeri, terminal yönetimi | 🌟 Multi-DB (SQL Server + PostgreSQL)<br>🌟 CQRS (EF Core + Dapper)<br>🌟 Domain Events (local + integration) |
+| **Transaction** | İşlem, provizyon, LKS | 🌟 Polly Resilience<br>🌟 Redis Cache<br>🌟 Rate Limiting<br>🌟 Domain Events (local + integration) |
+| **Dispute** | İtiraz yönetimi | 🌟 Cross-module: FraudDetected dinler |
+| **Campaign** | Kampanya, kural motoru | 🌟 Cross-module: TransactionCompleted dinler |
+| **BKM** | Switch entegrasyonu | 🌟 Cross-module: TerminalActivated dinler |
+| **HSM** | Güvenlik modülü (Thales, Gemalto) | 🌟 Cross-module: CardApplicationApproved + TerminalActivated dinler |
+| **Fee** | Ücret, aidat, tarife yönetimi | 🌟 Cross-module: TransactionCompleted dinler |
 | **Statement** | Ekstre yönetimi | Document generation |
-| **Accounting** | Muhasebe entegrasyonu | Double-entry bookkeeping |
+| **Accounting** | Muhasebe entegrasyonu | 🌟 Cross-module: TransactionCompleted dinler |
 | **MerchantReport** | Üye işyeri raporlama (FTP, mail) | Scheduled reports |
 | **MerchantSettlement** | Üye işyeri takas | Payment processing |
-| **BulkCardPrint** | Toplu kart basım (Bileşim, Austria) | Batch processing |
+| **BulkCardPrint** | Toplu kart basım (Bileşim, Austria) | 🌟 Cross-module: CardApplicationApproved dinler |
 | **RegulatoryReporting** | Yasal raporlama (BDDK, TCMB) | Compliance |
 | **Courier** | Kurye entegrasyonu (Kuryenet) | Shipment tracking |
 | **EarlyBlockResolution** | Erken bloke çözüm | - |
@@ -56,10 +56,11 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 ├─────────────────────────────────────────────────────────────┤
 │                   Application Layer                         │
 │    Commands/Queries (MediatR), DTOs, Validators            │
+│    Event Handlers (Same-Module + Cross-Module)             │
 ├─────────────────────────────────────────────────────────────┤
 │                     Domain Layer                            │
 │   Aggregates, Entities, Value Objects, Smart Enums,        │
-│   Domain Events, Business Rules                            │
+│   Domain Events, Integration Events, Business Rules        │
 ├─────────────────────────────────────────────────────────────┤
 │                 Infrastructure Layer                        │
 │  EF Core (Write), Dapper (Read), PostgreSQL, SQL Server    │
@@ -78,7 +79,7 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 | **Resilience** | Transaction | Polly (Retry, Circuit Breaker, Timeout) |
 | **Repository** | Tümü | Data access abstraction |
 | **Mediator** | Tümü | MediatR (commands/queries/events) |
-| **Domain Events** | Card, Merchant, Transaction | ⚠️ Tanımlı ama publish edilmiyor |
+| **Domain Events** | Card, Merchant, Transaction | ✅ Local events + Cross-module integration events |
 
 ---
 
@@ -175,7 +176,166 @@ dotnet run --project CardMerchantSystem.API
 
 ## 🌟 Öne Çıkan Özellikler
 
-### 1. Multi-Database Support (Merchant Modülü)
+### 1. Domain Events (Event-Driven Architecture) ✅
+
+**İki katmanlı event sistem:**
+
+```
+Aggregate
+    ├── Local Domain Events       → Same-module handler'lar (logging, audit)
+    └── Integration Events        → Cross-module handler'lar (iş akışı)
+```
+
+#### Infrastructure
+
+```csharp
+// MediatorExtensions.cs — DbContext'ten event dispatch
+public static async Task DispatchDomainEventsAsync(this IMediator mediator, DbContext context)
+{
+    var domainEntities = context.ChangeTracker.Entries<AggregateRoot>()
+        .Where(x => x.Entity.DomainEvents.Any())
+        .Select(x => x.Entity).ToList();
+
+    var domainEvents = domainEntities.SelectMany(x => x.DomainEvents).ToList();
+    domainEntities.ForEach(entity => entity.ClearDomainEvents());
+
+    foreach (var domainEvent in domainEvents)
+        await mediator.Publish(domainEvent);
+}
+
+// DbContext — SaveChangesAsync'te otomatik dispatch
+public override async Task<int> SaveChangesAsync(CancellationToken ct)
+{
+    var result = await base.SaveChangesAsync(ct);
+    if (_mediator != null)
+        await _mediator.DispatchDomainEventsAsync(this);
+    return result;
+}
+```
+
+#### Integration Events (Shared)
+
+| Event | Tetikleyen | Dinleyen Modüller |
+|-------|-----------|-------------------|
+| `CardApplicationApprovedIntegrationEvent` | Card.Approve() | BulkCardPrint, HSM |
+| `CardPrintedIntegrationEvent` | Card.MarkAsPrinted() | - |
+| `MerchantApprovedIntegrationEvent` | Merchant.Approve() | - |
+| `TerminalActivatedIntegrationEvent` | Merchant.ActivateTerminal() | HSM, BKM |
+| `TransactionCompletedIntegrationEvent` | Transaction.Approve() | Campaign, Fee, Accounting |
+| `FraudDetectedIntegrationEvent` | Transaction.SetFraudCheckResult() | Dispute |
+
+#### Same-Module Event Handlers
+
+**Card Module:**
+- `CardApplicationApprovedEventHandler` — Onay logu
+- `CardApplicationRejectedEventHandler` — Red logu
+- `CardPrintedEventHandler` — Basım logu
+- `CardDeliveryStartedEventHandler` — Teslimat logu
+- `CardApplicationCancelledEventHandler` — İptal logu
+- `CardDeliveredEventHandler` — Teslim logu
+
+**Merchant Module:**
+- `MerchantApprovedEventHandler` — Onay logu
+- `MerchantActivatedEventHandler` — Aktivasyon logu
+- `MerchantSuspendedEventHandler` — Askıya alma logu
+- `TerminalActivatedEventHandler` — Terminal aktivasyon logu
+
+**Transaction Module:**
+- `TransactionCreatedEventHandler` — Oluşturma logu
+- `TransactionApprovedEventHandler` — Onay logu
+- `TransactionDeclinedEventHandler` — Red logu
+- `TransactionSettledEventHandler` — Takas logu
+- `FraudDetectedEventHandler` — Fraud uyarı logu
+
+#### Cross-Module Event Handlers
+
+**BulkCardPrint Module:**
+- `CardApplicationApprovedIntegrationEventHandler` — Kart onaylandığında basım emri oluşturur
+
+**HSM Module:**
+- `CardApplicationApprovedIntegrationEventHandler` — Kart onaylandığında CVV/PIN üretir
+- `TerminalActivatedIntegrationEventHandler` — Terminal aktive edildiğinde master/working key üretir
+
+**BKM Module:**
+- `TerminalActivatedIntegrationEventHandler` — Terminal aktive edildiğinde BKM Switch'e kaydeder
+
+**Campaign Module:**
+- `TransactionCompletedIntegrationEventHandler` — İşlem tamamlandığında kampanya puanları hesaplar
+
+**Fee Module:**
+- `TransactionCompletedIntegrationEventHandler` — İşlem tamamlandığında komisyon hesaplar
+
+**Accounting Module:**
+- `TransactionCompletedIntegrationEventHandler` — İşlem tamamlandığında muhasebe kayıt oluşturur
+
+**Dispute Module:**
+- `FraudDetectedIntegrationEventHandler` — Fraud tespit edildiğinde otomatik dispute oluşturur
+
+#### Test Senaryoları (Doğrulandı ✅)
+
+**Senaryo 1: Terminal Aktivasyon**
+```
+PUT /api/Merchants/{merchantId}/terminals/{terminalId}/activate
+```
+```
+🎉 [Merchant] Terminal aktiv edildi          ← Local event
+🔄 [BKM] Terminal BKM Switch'e kaydediliyor ← Integration event
+✅ [BKM] Terminal BKM Switch'e kaydedildi
+🔐 [HSM] Terminal key'leri üretiliyor       ← Integration event
+✅ [HSM] Terminal key'leri üretildi
+```
+
+**Senaryo 2: Transaction Onay (Satış)**
+```
+POST /api/Transactions
+{
+  "transactionTypeId": 1,    // Sale
+  "amount": 150.50,          // Fraud pass, limit OK
+  ...
+}
+```
+```
+🆕 [Transaction] İşlem oluşturuldu          ← Local event
+✅ [Transaction] İşlem onaylandı            ← Local event
+🎯 [Campaign] Kampanya puanları hesaplıyor  ← Integration event
+✅ [Campaign] Kampanya puanları hesaplandı
+💰 [Fee] Komisyon hesaplıyor                ← Integration event
+✅ [Fee] Komisyon hesaplandı
+📊 [Accounting] Muhasebe kayıt oluşturuluyor ← Integration event
+✅ [Accounting] Muhasebe kayıt oluşturuldu
+```
+
+**Senaryo 3: Fraud Reject**
+```
+POST /api/Transactions
+{
+  "transactionTypeId": 1,
+  "amount": 150000,          // Score: 80 → REJECT
+  ...
+}
+```
+```
+🆕 [Transaction] İşlem oluşturuldu          ← Local event
+⚠️  [Transaction] FRAUD TESPİT EDİLDİ       ← Local event
+❌ [Transaction] İşlem reddedildi           ← Local event
+⚠️  [Dispute] Fraud dispute oluşturuluyor   ← Integration event
+✅ [Dispute] Fraud dispute oluşturuldu
+```
+
+**Fraud Score Kuralları:**
+| Kural | Koşul | Score |
+|-------|-------|-------|
+| Yüksek tutar | Amount > 50,000 | +30 |
+| Gece saati | 00:00 - 05:00 | +20 |
+| Çok yüksek tutar | Amount > 100,000 | +40 |
+| Yuvarlak tutar | Tam sayı & > 1,000 | +10 |
+| **Reject** | **Score ≥ 80** | **REJECT** |
+| Review | Score ≥ 50 | Review |
+| Pass | Score < 50 | Pass |
+
+---
+
+### 2. Multi-Database Support (Merchant Modülü)
 
 **Tek kod tabanı, iki veritabanı:**
 
@@ -190,6 +350,7 @@ MerchantDbContextBase (Abstract)
 - Design-time factories
 - Automatic type mapping (uniqueidentifier vs uuid)
 - Provider-specific conventions
+- IMediator injection for domain event dispatch
 
 **Provider değiştirme:**
 ```json
@@ -204,7 +365,7 @@ MerchantDbContextBase (Abstract)
 
 ---
 
-### 2. CQRS (Merchant Modülü)
+### 3. CQRS (Merchant Modülü)
 
 **Write (EF Core):**
 ```csharp
@@ -234,7 +395,7 @@ GET /api/merchant/dapper-test/{id}/detail
 
 ---
 
-### 3. Resilience Patterns (Transaction Modülü)
+### 4. Resilience Patterns (Transaction Modülü)
 
 **Polly Policies:**
 - **Retry:** 3 attempts with exponential backoff
@@ -263,6 +424,7 @@ GET /api/merchant/dapper-test/{id}/detail
 - User activity logs
 - Database provider usage
 - Error tracking
+- Domain event flow tracking
 
 **Kibana Dashboard:** `http://localhost:5601`
 
@@ -284,12 +446,17 @@ fields.DatabaseProvider: "PostgreSql"
 
 # Belirli kullanıcı
 fields.Username: "admin"
+
+# Domain event log'ları
+fields.Message: "*[Transaction]*"
+fields.Message: "*[Campaign]*"
+fields.Message: "*[HSM]*"
 ```
 
 **Log Seviyeleri:**
 - **Debug**: Geliştirme detayları
-- **Information**: Normal işlem akışı
-- **Warning**: Potansiyel sorunlar
+- **Information**: Normal işlem akışı + Domain event log'ları
+- **Warning**: Potansiyel sorunlar (Fraud tespit)
 - **Error**: Hatalar ve exception'lar
 - **Fatal**: Kritik sistem hataları
 
@@ -343,9 +510,15 @@ CardMerchantSystem/
 ├── CardMerchantSystem.Shared/
 │   ├── Kernel/                           # Base classes
 │   │   ├── AggregateRoot.cs
+│   │   ├── Entity.cs                     # DomainEvents list + ClearDomainEvents
 │   │   ├── ValueObject.cs
-│   │   ├── SmartEnum.cs
-│   │   └── DomainEvent.cs
+│   │   ├── Enumeration.cs               # Smart Enums
+│   │   ├── IDomainEvent.cs              # INotification marker
+│   │   └── DomainEvent.cs               # Base class (EventId, OccurredOn)
+│   ├── Events/
+│   │   └── IntegrationEvents.cs         # Cross-module integration events
+│   ├── Extensions/
+│   │   └── MediatorExtensions.cs        # DispatchDomainEventsAsync
 │   ├── Data/
 │   │   ├── DatabaseProvider.cs           # Enum: SqlServer, PostgreSql
 │   │   ├── DatabaseOptions.cs
@@ -355,123 +528,73 @@ CardMerchantSystem/
 └── Modules/
     ├── Card/
     │   ├── Card.Domain/
-    │   │   ├── Entities/                 # Aggregates, entities
-    │   │   ├── Events/                   # Domain events (⚠️ not published)
+    │   │   ├── Entities/                 # CardApplication aggregate
+    │   │   ├── Events/                   # Local domain events ✅
     │   │   ├── ValueObjects/
-    │   │   └── Enums/                    # Smart enums
+    │   │   └── Enums/
     │   ├── Card.Application/
-    │   │   ├── Commands/                 # Write operations
-    │   │   ├── Queries/                  # Read operations
+    │   │   ├── Commands/
+    │   │   ├── Queries/
+    │   │   ├── EventHandlers/            # Same-module event handlers ✅
     │   │   └── DTOs/
     │   └── Card.Infrastructure/
     │       ├── Persistence/
-    │       │   ├── CardDbContext.cs
+    │       │   ├── CardDbContext.cs      # IMediator + DispatchDomainEventsAsync ✅
     │       │   ├── Configurations/
     │       │   └── Migrations/
     │       └── Repositories/
-    ├── Merchant/                         # Multi-DB + CQRS showcase
+    ├── Merchant/                         # Multi-DB + CQRS + Events showcase
     │   ├── Merchant.Domain/
+    │   │   ├── Events/                   # Local domain events ✅
     │   │   └── ReadModels/               # Dapper DTOs
+    │   ├── Merchant.Application/
+    │   │   └── EventHandlers/            # Same-module event handlers ✅
     │   └── Merchant.Infrastructure/
     │       ├── Persistence/
-    │       │   ├── MerchantDbContextBase.cs
-    │       │   ├── MerchantDbContext.cs  # SQL Server
-    │       │   ├── MerchantDbContext_Pg.cs # PostgreSQL
+    │       │   ├── MerchantDbContextBase.cs  # IMediator + dispatch ✅
+    │       │   ├── MerchantDbContext.cs      # SQL Server
+    │       │   ├── MerchantDbContext_Pg.cs   # PostgreSQL
     │       │   ├── Migrations/
     │       │   │   ├── SqlServer/
     │       │   │   └── PostgreSql/
     │       │   └── Dapper/
-    │       │       └── MerchantDapperContext.cs
-    │       └── README.md                 # Multi-DB implementation guide
-    ├── Transaction/                      # Resilience showcase
-    └── ... (14 more modules)
+    │       └── README.md
+    ├── Transaction/                      # Resilience + Events showcase
+    │   ├── Transaction.Domain/
+    │   │   ├── Entities/                 # TransactionAggregate
+    │   │   ├── Events/                   # Local domain events ✅
+    │   │   ├── Services/                 # IFraudService, ILimitService
+    │   │   └── ValueObjects/
+    │   ├── Transaction.Application/
+    │   │   ├── Commands/                 # ProcessTransactionCommand (auto-approve flow)
+    │   │   └── EventHandlers/            # Same-module event handlers ✅
+    │   └── Transaction.Infrastructure/
+    │       ├── Persistence/
+    │       │   └── TransactionDbContext.cs   # IMediator + dispatch ✅
+    │       └── Services/                     # FraudService, LimitService
+    ├── BulkCardPrint/
+    │   └── BulkCardPrint.Application/
+    │       └── EventHandlers/            # Cross-module: CardApplicationApproved ✅
+    ├── HSM/
+    │   └── HSM.Application/
+    │       └── EventHandlers/            # Cross-module: CardApproved + TerminalActivated ✅
+    ├── BKM/
+    │   └── BKM.Application/
+    │       └── EventHandlers/            # Cross-module: TerminalActivated ✅
+    ├── Campaign/
+    │   └── Campaign.Application/
+    │       └── EventHandlers/            # Cross-module: TransactionCompleted ✅
+    ├── Fee/
+    │   └── Fee.Application/
+    │       └── EventHandlers/            # Cross-module: TransactionCompleted ✅
+    ├── Accounting/
+    │   └── Accounting.Application/
+    │       └── EventHandlers/            # Cross-module: TransactionCompleted ✅
+    ├── Dispute/
+    │   └── Dispute.Application/
+    │       └── EventHandlers/            # Cross-module: FraudDetected ✅
+    └── ... (diğer modüller)
 ```
-
----
-
-## ⚠️ Bilinen Kısıtlamalar
-
-### 1. Domain Events Publish Edilmiyor ⚠️
-
-**Durum:** Event'ler tanımlı ve aggregate'lerde fırlatılıyor, ancak MediatR ile publish edilmiyor!
-
-```csharp
-// ✅ Event tanımlı
-public class CardApplicationApprovedEvent : DomainEvent
-{
-    public Guid ApplicationId { get; }
-    public string CustomerTckn { get; }
-    // ...
-}
-
-// ✅ Aggregate'te fırlatılıyor
-public Result Approve(string approverUsername)
-{
-    Status = CardApplicationStatus.Approved;
-    AddDomainEvent(new CardApplicationApprovedEvent(Id, CustomerTckn));
-    return Result.Success();
-}
-
-// ❌ SaveChangesAsync'te publish EDİLMİYOR
-public override async Task<int> SaveChangesAsync(CancellationToken ct)
-{
-    var result = await base.SaveChangesAsync(ct);
-    
-    // EKSIK: await _mediator.DispatchDomainEventsAsync(this);
-    
-    return result;
-}
-```
-
-**Yapılması Gereken:**
-- [ ] `MediatorExtensions.DispatchDomainEventsAsync` metodu ekle
-- [ ] DbContext'lere `IMediator` enjekte et
-- [ ] `SaveChangesAsync`'te event'leri publish et
-- [ ] Event handler'lar yaz (örn: `CardApplicationApprovedEventHandler`)
-
-**Etki:**
-- Modüller arası otomatik iletişim yok
-- İş akışları manuel API call'lar ile yapılıyor
-- Event-driven architecture eksik
-
----
-
-### 2. Multi-Database Sadece Merchant Modülünde
-
-**Durum:** Sadece Merchant modülü SQL Server + PostgreSQL destekliyor. Diğer 16 modül sadece SQL Server kullanıyor.
-
-**Merchant Modülünü Referans Alarak Diğer Modüllere Ekleme:**
-
-1. Base DbContext oluştur:
-```csharp
-public abstract class XxxDbContextBase : DbContext
-{
-    protected abstract void ConfigureModel(ModelBuilder modelBuilder);
-    protected abstract string GetSchema();
-}
-```
-
-2. Provider-specific context'ler:
-```csharp
-public class XxxDbContext : XxxDbContextBase { }          // SQL Server
-public class XxxDbContext_Pg : XxxDbContextBase { }       // PostgreSQL
-```
-
-3. Design-time factories ekle
-4. Migration'ları oluştur
-
-**Referans:** [Merchant.Infrastructure/README.md](Modules/Merchant/Merchant.Infrastructure/README.md)
-
----
-
-### 3. CQRS Sadece Merchant Modülünde
-
-**Durum:** Sadece Merchant modülü CQRS pattern kullanıyor (EF Core + Dapper). Diğer modüller sadece EF Core kullanıyor.
-
-**Ne Zaman CQRS Eklenebilir:**
-- ✅ Complex join'ler gereken read query'ler
-- ✅ Performance kritik read operasyonları
-- ✅ Farklı read model ihtiyaçları
 
 ---
 
@@ -491,6 +614,56 @@ Update-Database -Context XxxDbContext -Project Xxx.Infrastructure -StartupProjec
 # appsettings.json: Provider = "PostgreSql"
 Add-Migration MigrationName_PostgreSql -Context MerchantDbContext_Pg -Project Merchant.Infrastructure -StartupProject CardMerchantSystem.API -OutputDir Persistence\Migrations\PostgreSql
 Update-Database -Context MerchantDbContext_Pg -Project Merchant.Infrastructure -StartupProject CardMerchantSystem.API
+```
+
+### Yeni Domain Event Eklemek
+
+**1. Local Event tanımla (Domain katmanı):**
+```csharp
+// Card.Domain/Events/CardApplicationEvents.cs
+public class CardApplicationApprovedEvent : DomainEvent
+{
+    public Guid ApplicationId { get; }
+    public CardApplicationApprovedEvent(Guid applicationId)
+    {
+        ApplicationId = applicationId;
+    }
+}
+```
+
+**2. Aggregate'de fırlat:**
+```csharp
+// Card.Domain/Entities/CardApplication.cs
+public Result Approve()
+{
+    Status = CardApplicationStatus.Approved;
+    AddDomainEvent(new CardApplicationApprovedEvent(Id));       // Local
+    AddDomainEvent(new CardApplicationApprovedIntegrationEvent(...)); // Cross-module
+    return Result.Success();
+}
+```
+
+**3. Handler yaz (Application katmanı):**
+```csharp
+// Card.Application/EventHandlers/CardApplicationApprovedEventHandler.cs
+public class CardApplicationApprovedEventHandler : INotificationHandler<CardApplicationApprovedEvent>
+{
+    public async Task Handle(CardApplicationApprovedEvent notification, CancellationToken ct)
+    {
+        _logger.LogInformation("✅ [Card] Başvuru onaylandı - {ApplicationId}", notification.ApplicationId);
+        await Task.CompletedTask;
+    }
+}
+```
+
+**4. Cross-module event gerekiyorsa Integration Event ekle:**
+```csharp
+// Shared/Events/IntegrationEvents.cs
+public class CardApplicationApprovedIntegrationEvent : DomainEvent { ... }
+
+// OtherModule.Application/EventHandlers/
+public class CardApplicationApprovedIntegrationEventHandler
+    : INotificationHandler<CardApplicationApprovedIntegrationEvent> { ... }
 ```
 
 ### Exception Kullanımı
@@ -526,7 +699,6 @@ public class ApproveCardHandler : IRequestHandler<ApproveCardCommand, Result>
 
         try
         {
-            // Business logic
             var result = await _repository.ApproveAsync(request.ApplicationId);
             
             _logger.LogInformation(
@@ -563,9 +735,7 @@ public class CreateMerchantHandler : IRequestHandler<CreateMerchantCommand, Resu
 {
     public async Task<Result<Guid>> Handle(CreateMerchantCommand request, CancellationToken ct)
     {
-        // Validation
-        // Business logic
-        // Save
+        // Validation → Business logic → Save (otomatik event dispatch)
     }
 }
 ```
@@ -581,9 +751,7 @@ public class GetMerchantHandler : IRequestHandler<GetMerchantQuery, Result<Merch
 {
     public async Task<Result<MerchantDto>> Handle(GetMerchantQuery request, CancellationToken ct)
     {
-        // Read from database
-        // Map to DTO
-        // Return
+        // Read from database → Map to DTO → Return
     }
 }
 ```
@@ -682,6 +850,14 @@ Update-Database -Context MerchantDbContext -Project Merchant.Infrastructure -Sta
 3. Migration'ı yeniden oluştur (otomatik `uuid` kullanacak)
 4. `Update-Database` çalıştır
 
+### Domain Event Tetiklenmiyor
+
+**Kontrol listesi:**
+1. `MediatorExtensions.cs` — `Shared/Extensions/` altında var mı?
+2. DbContext constructor'da `IMediator? mediator` parametresi var mı?
+3. `SaveChangesAsync`'te `await _mediator.DispatchDomainEventsAsync(this)` çağrılıyor mu?
+4. Design-time factory'lerde constructor'a `null` geçildiğinden emin ol
+
 ### Elasticsearch Connection Error
 
 ```bash
@@ -704,11 +880,14 @@ curl http://localhost:9200/_cluster/health
 
 ### Kısa Vadeli (1-3 Ay)
 
-- [ ] **Domain Event Infrastructure**
-  - MediatR dispatcher implementation
-  - Event handler'lar (CardApplicationApprovedEventHandler, vs.)
-  - Cross-module event communication
-  
+- [x] **Domain Event Infrastructure** ✅
+  - [x] MediatorExtensions dispatcher
+  - [x] DbContext'lere IMediator injection
+  - [x] Same-module event handlers (Card, Merchant, Transaction)
+  - [x] Integration events (Shared)
+  - [x] Cross-module event handlers (BKM, HSM, BulkCardPrint, Campaign, Fee, Accounting, Dispute)
+  - [x] Test senaryoları doğrulandı
+
 - [ ] **InstantCardPrint Module**
   - Evolis Primacy entegrasyonu
   - Instant card printing workflow
@@ -818,7 +997,7 @@ Proje hakkında sorularınız için issue açabilirsiniz.
 
 ---
 
-**Son Güncelleme:** 28 Ocak 2026  
-**Versiyon:** 1.4.0  
-**Tamamlanma:** %89 (17/19 modül)  
-**Durum:** ✅ Production-Ready (Domain Events hariç)
+**Son Güncelleme:** 31 Ocak 2026  
+**Versiyon:** 1.5.0  
+**Tamamlanma:** %92 (17/19 modül + Domain Events)  
+**Durum:** ✅ Production-Ready

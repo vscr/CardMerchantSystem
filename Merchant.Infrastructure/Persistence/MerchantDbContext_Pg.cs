@@ -1,11 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MediatR;
 using Merchant.Infrastructure.Persistence.Configurations;
+using Microsoft.EntityFrameworkCore;
 
 namespace Merchant.Infrastructure.Persistence;
 
 public class MerchantDbContext_Pg : MerchantDbContextBase
 {
-    public MerchantDbContext_Pg(DbContextOptions<MerchantDbContext_Pg> options) : base(options)
+    public MerchantDbContext_Pg(DbContextOptions<MerchantDbContext_Pg> options, IMediator? mediator)
+     : base(options, mediator)
     {
     }
 

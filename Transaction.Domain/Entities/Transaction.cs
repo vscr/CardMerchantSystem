@@ -1,7 +1,8 @@
-﻿using Transaction.Domain.Enums;
+﻿using CardMerchantSystem.Shared.Events;
+using CardMerchantSystem.Shared.Kernel;
+using Transaction.Domain.Enums;
 using Transaction.Domain.Events;
 using Transaction.Domain.ValueObjects;
-using CardMerchantSystem.Shared.Kernel;
 
 namespace Transaction.Domain.Entities;
 
@@ -120,6 +121,13 @@ public class TransactionAggregate : AggregateRoot
                 Amount.Amount,
                 "Fraud skoru çok yüksek"));
 
+            AddDomainEvent(new FraudDetectedIntegrationEvent(
+                    Id,
+                    ReferenceNumber.Value,
+                    CardNumberMasked,
+                    Amount.Amount,
+                    "Fraud skoru çok yüksek"));
+
             AddDomainEvent(new TransactionDeclinedEvent(
                 Id,
                 ReferenceNumber.Value,
@@ -144,11 +152,24 @@ public class TransactionAggregate : AggregateRoot
         AuthorizationCode = ValueObjects.AuthorizationCode.Generate();
         MarkAsUpdated();
 
+        
         AddDomainEvent(new TransactionApprovedEvent(
             Id,
             ReferenceNumber.Value,
             AuthorizationCode.Value,
             Amount.Amount));
+
+      
+        AddDomainEvent(new TransactionCompletedIntegrationEvent(
+            Id,
+            ReferenceNumber.Value,
+            Amount.Amount,
+            CardNumberMasked,
+            MerchantId,
+            MerchantCode,
+            TerminalId,
+            TerminalCode,
+            AuthorizationCode.Value));
 
         return Result.Success();
     }

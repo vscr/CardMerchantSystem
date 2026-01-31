@@ -19,6 +19,6 @@ public class MerchantDbContextFactory : IDesignTimeDbContextFactory<MerchantDbCo
         var optionsBuilder = new DbContextOptionsBuilder<MerchantDbContext>();
         optionsBuilder.UseSqlServer(connectionString);
 
-        return new MerchantDbContext(optionsBuilder.Options);
+        return new MerchantDbContext(optionsBuilder.Options, null);
     }
 }

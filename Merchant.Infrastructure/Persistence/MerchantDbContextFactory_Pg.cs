@@ -19,6 +19,6 @@ public class MerchantDbContextFactory_Pg : IDesignTimeDbContextFactory<MerchantD
         var optionsBuilder = new DbContextOptionsBuilder<MerchantDbContext_Pg>();
         optionsBuilder.UseNpgsql(connectionString);
 
-        return new MerchantDbContext_Pg(optionsBuilder.Options);
+        return new MerchantDbContext_Pg(optionsBuilder.Options, null);
     }
 }

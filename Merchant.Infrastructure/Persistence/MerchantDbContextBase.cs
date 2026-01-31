@@ -1,12 +1,16 @@
-﻿using Merchant.Domain.Entities;
+﻿using CardMerchantSystem.Shared.Extensions;
+using MediatR;
+using Merchant.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Merchant.Infrastructure.Persistence;
 
 public abstract class MerchantDbContextBase : DbContext
 {
-    protected MerchantDbContextBase(DbContextOptions options) : base(options)
+    protected readonly IMediator? _mediator;
+    protected MerchantDbContextBase(DbContextOptions options, IMediator? mediator) : base(options)
     {
+        _mediator = mediator;
     }
 
     public DbSet<MerchantAggregate> Merchants => Set<MerchantAggregate>();
@@ -21,7 +25,7 @@ public abstract class MerchantDbContextBase : DbContext
     protected abstract void ConfigureModel(ModelBuilder modelBuilder);
     protected abstract string GetSchema();
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var entries = ChangeTracker.Entries()
             .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
@@ -45,6 +49,13 @@ public abstract class MerchantDbContextBase : DbContext
             }
         }
 
-        return base.SaveChangesAsync(cancellationToken);
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        if (_mediator != null)
+        {
+            await _mediator.DispatchDomainEventsAsync(this);
+        }
+
+        return result;
     }
 }

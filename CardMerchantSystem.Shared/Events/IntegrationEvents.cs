@@ -102,37 +102,67 @@ public class TerminalActivatedIntegrationEvent : DomainEvent
 // ═══════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Transaction tamamlandığında fırlatılır
+/// İşlem onaylandığında fırlatılır
 /// Cross-module: Campaign (puan), Fee (komisyon), Accounting dinler
 /// </summary>
 public class TransactionCompletedIntegrationEvent : DomainEvent
 {
     public Guid TransactionId { get; }
     public string ReferenceNumber { get; }
-    public Guid CardId { get; }
-    public string CardNumber { get; }
+    public decimal Amount { get; }
+    public string CardNumberMasked { get; }
     public Guid MerchantId { get; }
     public string MerchantCode { get; }
-    public decimal Amount { get; }
-    public string Currency { get; }
+    public Guid TerminalId { get; }
+    public string TerminalCode { get; }
+    public string AuthorizationCode { get; }
 
     public TransactionCompletedIntegrationEvent(
         Guid transactionId,
         string referenceNumber,
-        Guid cardId,
-        string cardNumber,
+        decimal amount,
+        string cardNumberMasked,
         Guid merchantId,
         string merchantCode,
-        decimal amount,
-        string currency)
+        Guid terminalId,
+        string terminalCode,
+        string authorizationCode)
     {
         TransactionId = transactionId;
         ReferenceNumber = referenceNumber;
-        CardId = cardId;
-        CardNumber = cardNumber;
+        Amount = amount;
+        CardNumberMasked = cardNumberMasked;
         MerchantId = merchantId;
         MerchantCode = merchantCode;
+        TerminalId = terminalId;
+        TerminalCode = terminalCode;
+        AuthorizationCode = authorizationCode;
+    }
+}
+
+/// <summary>
+/// Fraud tespit edildiğinde fırlatılır
+/// Cross-module: Dispute, Accounting dinler
+/// </summary>
+public class FraudDetectedIntegrationEvent : DomainEvent
+{
+    public Guid TransactionId { get; }
+    public string ReferenceNumber { get; }
+    public string CardNumberMasked { get; }
+    public decimal Amount { get; }
+    public string FraudReason { get; }
+
+    public FraudDetectedIntegrationEvent(
+        Guid transactionId,
+        string referenceNumber,
+        string cardNumberMasked,
+        decimal amount,
+        string fraudReason)
+    {
+        TransactionId = transactionId;
+        ReferenceNumber = referenceNumber;
+        CardNumberMasked = cardNumberMasked;
         Amount = amount;
-        Currency = currency;
+        FraudReason = fraudReason;
     }
 }

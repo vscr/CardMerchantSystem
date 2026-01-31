@@ -1,12 +1,16 @@
 ﻿using Card.Domain.Entities;
+using CardMerchantSystem.Shared.Extensions;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Card.Infrastructure.Persistence;
 
 public class CardDbContext : DbContext
 {
-    public CardDbContext(DbContextOptions<CardDbContext> options) : base(options)
+    private readonly IMediator? _mediator;
+    public CardDbContext(DbContextOptions<CardDbContext> options, IMediator? mediator) : base(options)
     {
+        _mediator = mediator;
     }
 
     public DbSet<CardApplication> CardApplications => Set<CardApplication>();
@@ -36,6 +40,13 @@ public class CardDbContext : DbContext
             }
         }
 
-        return await base.SaveChangesAsync(cancellationToken);
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        if (_mediator != null)
+        {
+            await _mediator.DispatchDomainEventsAsync(this);
+        }
+
+        return result;
     }
 }
