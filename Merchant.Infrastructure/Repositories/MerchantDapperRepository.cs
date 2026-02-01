@@ -1,16 +1,16 @@
-﻿
-using CardMerchantSystem.Shared.Data.Dapper;
-using Dapper;
+﻿using Dapper;
 using Merchant.Domain.ReadModels;
 using Merchant.Domain.Repositories;
+using System.Data;
 
 namespace Merchant.Infrastructure.Repositories;
 
-public class MerchantDapperRepository : BaseDapperRepository, IMerchantDapperRepository
+public class MerchantDapperRepository :  IMerchantDapperRepository
 {
-    public MerchantDapperRepository(IDapperContext dapperContext)
-        : base(dapperContext)
+    private readonly IDbConnection _connection;
+    public MerchantDapperRepository(IDbConnection connection)
     {
+        _connection = connection;
     }
 
     public async Task<MerchantReadModel?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -25,7 +25,7 @@ public class MerchantDapperRepository : BaseDapperRepository, IMerchantDapperRep
             FROM Merchants
             WHERE Id = @Id";
 
-        return await QuerySingleOrDefaultAsync<MerchantReadModel>(sql, new { Id = id });
+        return await _connection.QuerySingleOrDefaultAsync<MerchantReadModel>(sql, new { Id = id });
     }
 
     public async Task<IEnumerable<MerchantReadModel>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -40,7 +40,7 @@ public class MerchantDapperRepository : BaseDapperRepository, IMerchantDapperRep
             FROM Merchants
             ORDER BY Name";
 
-        return await QueryAsync<MerchantReadModel>(sql);
+        return await _connection.QueryAsync<MerchantReadModel>(sql);
     }
 
     public async Task<MerchantReadModel?> GetByTaxNumberAsync(string taxNumber, CancellationToken cancellationToken = default)
@@ -55,7 +55,7 @@ public class MerchantDapperRepository : BaseDapperRepository, IMerchantDapperRep
             FROM Merchants
             WHERE TaxNumber = @TaxNumber";
 
-        return await QuerySingleOrDefaultAsync<MerchantReadModel>(sql, new { TaxNumber = taxNumber });
+        return await _connection.QuerySingleOrDefaultAsync<MerchantReadModel>(sql, new { TaxNumber = taxNumber });
     }
 
     public async Task<int> GetActiveMerchantCountAsync(CancellationToken cancellationToken = default)
@@ -65,7 +65,7 @@ public class MerchantDapperRepository : BaseDapperRepository, IMerchantDapperRep
             FROM Merchants
             WHERE StatusId = 3";
 
-        var result = await ExecuteScalarAsync<int>(sql);
+        var result = await _connection.ExecuteScalarAsync<int>(sql);
         return result;
     }
 
@@ -109,7 +109,10 @@ public class MerchantDapperRepository : BaseDapperRepository, IMerchantDapperRep
             OFFSET @Offset ROWS
             FETCH NEXT @PageSize ROWS ONLY";
 
-        return await QueryPagedAsync<MerchantReadModel>(dataSql, countSql, parameters, pageNumber, pageSize);
+        var totalCount = await _connection.ExecuteScalarAsync<int>(countSql, parameters);
+        var data = await _connection.QueryAsync<MerchantReadModel>(dataSql, parameters);
+
+        return (data, totalCount);
     }
 
     public async Task<MerchantDetailDto?> GetMerchantDetailAsync(Guid merchantId, CancellationToken cancellationToken = default)
@@ -131,6 +134,6 @@ public class MerchantDapperRepository : BaseDapperRepository, IMerchantDapperRep
             WHERE m.Id = @MerchantId
             GROUP BY m.Id, m.MerchantCode, m.Name, m.TaxNumber, m.StatusId, m.CreatedAt";
 
-        return await QuerySingleOrDefaultAsync<MerchantDetailDto>(sql, new { MerchantId = merchantId });
+        return await _connection.QuerySingleOrDefaultAsync<MerchantDetailDto>(sql, new { MerchantId = merchantId });
     }
 }

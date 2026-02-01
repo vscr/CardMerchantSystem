@@ -29,4 +29,8 @@
 		<ProjectReference Include="..\Merchant.Domain\Merchant.Domain.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Data\Dapper\" />
+	</ItemGroup>
+
 </Project>
