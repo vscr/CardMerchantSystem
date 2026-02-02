@@ -30,6 +30,10 @@ public static class DependencyInjection
             options.ConfigureDatabase(provider, connectionString);
         });
 
+        // Base context alias — MerchantRepository bunu inject ediyor
+        services.AddScoped<MerchantDbContextBase>(sp =>
+            sp.GetRequiredService<MerchantDbContext>());
+
         // Dapper - IDbConnection
         services.AddScoped<IDbConnection>(sp =>
         {
