@@ -24,6 +24,22 @@ public interface ICampaignRepository
 
     Task<IReadOnlyList<CampaignAggregate>> GetExpiredCampaignsAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Sayfalı kampanya listesi getirir
+    /// </summary>
+    Task<(IReadOnlyList<CampaignAggregate> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        CampaignStatus? status = null,
+        Guid? merchantId = null,
+        string? searchTerm = null,
+        DateTime? startDateFrom = null,
+        DateTime? startDateTo = null,
+        bool? isActive = null,
+        string? sortBy = null,
+        bool sortDescending = false,
+        CancellationToken cancellationToken = default);
+
     Task<int> GetUsageCountByCustomerAsync(Guid campaignId, string cardNumberMasked, CancellationToken cancellationToken = default);
 
     Task AddAsync(CampaignAggregate campaign, CancellationToken cancellationToken = default);

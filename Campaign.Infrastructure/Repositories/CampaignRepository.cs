@@ -96,6 +96,110 @@ public class CampaignRepository : ICampaignRepository
             .ToList();
     }
 
+    public async Task<(IReadOnlyList<CampaignAggregate> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        CampaignStatus? status = null,
+        Guid? merchantId = null,
+        string? searchTerm = null,
+        DateTime? startDateFrom = null,
+        DateTime? startDateTo = null,
+        bool? isActive = null,
+        string? sortBy = null,
+        bool sortDescending = false,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+
+        // Temel sorgu
+        var query = _context.Campaigns
+            .Include(x => x.Rules)
+            .AsQueryable();
+
+        // Merchant filtresi
+        if (merchantId.HasValue)
+        {
+            query = query.Where(x => x.IsAllMerchants ||
+                (x.AllowedMerchantIds != null && x.AllowedMerchantIds.Contains(merchantId.Value)));
+        }
+
+        // Tarih filtresi
+        if (startDateFrom.HasValue)
+        {
+            query = query.Where(x => x.StartDate >= startDateFrom.Value);
+        }
+
+        if (startDateTo.HasValue)
+        {
+            query = query.Where(x => x.StartDate <= startDateTo.Value);
+        }
+
+        // Arama filtresi
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.ToLowerInvariant();
+            query = query.Where(x =>
+                x.Name.ToLower().Contains(term) ||
+                x.CampaignCode.ToLower().Contains(term) ||
+                x.Description.ToLower().Contains(term));
+        }
+
+        // Memory'de filtrelenecekler için tüm veriyi çek
+        var allCampaigns = await query.ToListAsync(cancellationToken);
+
+        IEnumerable<CampaignAggregate> filteredQuery = allCampaigns;
+
+        // Status filtresi (Smart Enum - memory'de)
+        if (status != null)
+        {
+            filteredQuery = filteredQuery.Where(x => x.Status.Id == status.Id);
+        }
+
+        // Aktif kampanya filtresi
+        if (isActive.HasValue && isActive.Value)
+        {
+            filteredQuery = filteredQuery.Where(x =>
+                x.Status.IsUsable &&
+                x.StartDate <= now &&
+                x.EndDate >= now);
+        }
+
+        // Toplam sayı
+        var totalCount = filteredQuery.Count();
+
+        // Sıralama
+        filteredQuery = sortBy?.ToLowerInvariant() switch
+        {
+            "name" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.Name)
+                : filteredQuery.OrderBy(x => x.Name),
+            "createdat" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.CreatedAt)
+                : filteredQuery.OrderBy(x => x.CreatedAt),
+            "startdate" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.StartDate)
+                : filteredQuery.OrderBy(x => x.StartDate),
+            "enddate" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.EndDate)
+                : filteredQuery.OrderBy(x => x.EndDate),
+            "usagecount" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.CurrentUsageCount)
+                : filteredQuery.OrderBy(x => x.CurrentUsageCount),
+            "campaigncode" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.CampaignCode)
+                : filteredQuery.OrderBy(x => x.CampaignCode),
+            _ => filteredQuery.OrderByDescending(x => x.CreatedAt)
+        };
+
+        // Sayfalama
+        var items = filteredQuery
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return (items, totalCount);
+    }
+
     public async Task<int> GetUsageCountByCustomerAsync(Guid campaignId, string cardNumberMasked, CancellationToken cancellationToken = default)
     {
         return await _context.CampaignUsages

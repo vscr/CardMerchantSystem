@@ -1,6 +1,7 @@
 ﻿using Campaign.Application.Commands;
 using Campaign.Application.DTOs;
 using Campaign.Application.Queries;
+using CardMerchantSystem.Shared.Kernel;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,19 @@ public class CampaignsController : ControllerBase
     public CampaignsController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Kampanyaları sayfalı listeler
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<CampaignDto>>> GetPaged(
+        [FromQuery] CampaignFilterDto filter,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetCampaignsPagedQuery(filter);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>

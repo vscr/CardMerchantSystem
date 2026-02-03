@@ -10,12 +10,16 @@ public class CampaignDto
     public string Name { get; set; } = null!;
     public string Description { get; set; } = null!;
     public string Status { get; set; } = null!;
+    public int StatusId { get; set; }
     public string StatusDisplayName { get; set; } = null!;
     public string CampaignType { get; set; } = null!;
+    public int CampaignTypeId { get; set; }
     public string CampaignTypeDisplayName { get; set; } = null!;
     public string DiscountType { get; set; } = null!;
+    public int DiscountTypeId { get; set; }
     public string DiscountTypeDisplayName { get; set; } = null!;
     public string TargetAudience { get; set; } = null!;
+    public int TargetAudienceId { get; set; }
     public string TargetAudienceDisplayName { get; set; } = null!;
 
     // İndirim Bilgileri
