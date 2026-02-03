@@ -28,6 +28,23 @@ public interface IDisputeRepository
 
     Task<IReadOnlyList<DisputeAggregate>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Sayfalı itiraz listesi getirir
+    /// </summary>
+    Task<(IReadOnlyList<DisputeAggregate> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        DisputeStatus? status = null,
+        Guid? merchantId = null,
+        string? customerTckn = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        bool? isOverdue = null,
+        string? assignedTo = null,
+        string? sortBy = null,
+        bool sortDescending = false,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(DisputeAggregate dispute, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(DisputeAggregate dispute, CancellationToken cancellationToken = default);

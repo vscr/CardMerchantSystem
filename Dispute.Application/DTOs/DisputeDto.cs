@@ -8,10 +8,13 @@ public class DisputeDto
     public Guid Id { get; set; }
     public string DisputeNumber { get; set; } = null!;
     public string Status { get; set; } = null!;
+    public int StatusId { get; set; }
     public string StatusDisplayName { get; set; } = null!;
     public string Reason { get; set; } = null!;
+    public int ReasonId { get; set; }
     public string ReasonDisplayName { get; set; } = null!;
     public string Priority { get; set; } = null!;
+    public int PriorityId { get; set; }
     public string PriorityDisplayName { get; set; } = null!;
 
     // İşlem Bilgileri

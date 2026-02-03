@@ -105,6 +105,113 @@ public class DisputeRepository : IDisputeRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<(IReadOnlyList<DisputeAggregate> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        DisputeStatus? status = null,
+        Guid? merchantId = null,
+        string? customerTckn = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        bool? isOverdue = null,
+        string? assignedTo = null,
+        string? sortBy = null,
+        bool sortDescending = false,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+
+        // Temel sorgu
+        var query = _context.Disputes
+            .Include(x => x.Documents)
+            .Include(x => x.Notes)
+            .AsQueryable();
+
+        // Merchant filtresi
+        if (merchantId.HasValue)
+        {
+            query = query.Where(x => x.MerchantId == merchantId.Value);
+        }
+
+        // Müşteri TCKN filtresi
+        if (!string.IsNullOrWhiteSpace(customerTckn))
+        {
+            query = query.Where(x => x.CustomerTckn == customerTckn);
+        }
+
+        // Atanan kişi filtresi
+        if (!string.IsNullOrWhiteSpace(assignedTo))
+        {
+            query = query.Where(x => x.AssignedTo == assignedTo);
+        }
+
+        // Tarih filtresi
+        if (startDate.HasValue)
+        {
+            query = query.Where(x => x.CreatedAt >= startDate.Value);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(x => x.CreatedAt <= endDate.Value);
+        }
+
+        // Vadesi geçmiş filtresi
+        if (isOverdue.HasValue && isOverdue.Value)
+        {
+            query = query.Where(x => x.DueDate < now);
+        }
+
+        // Memory'de filtrelenecekler için tüm veriyi çek
+        var allDisputes = await query.ToListAsync(cancellationToken);
+
+        IEnumerable<DisputeAggregate> filteredQuery = allDisputes;
+
+        // Status filtresi (Smart Enum - memory'de)
+        if (status != null)
+        {
+            filteredQuery = filteredQuery.Where(x => x.Status.Id == status.Id);
+        }
+
+        // Vadesi geçmiş ama final olmayan (aktif overdue)
+        if (isOverdue.HasValue && isOverdue.Value)
+        {
+            filteredQuery = filteredQuery.Where(x => !x.Status.IsFinal);
+        }
+
+        // Toplam sayı
+        var totalCount = filteredQuery.Count();
+
+        // Sıralama
+        filteredQuery = sortBy?.ToLowerInvariant() switch
+        {
+            "createdat" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.CreatedAt)
+                : filteredQuery.OrderBy(x => x.CreatedAt),
+            "duedate" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.DueDate)
+                : filteredQuery.OrderBy(x => x.DueDate),
+            "amount" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.DisputedAmount)
+                : filteredQuery.OrderBy(x => x.DisputedAmount),
+            "priority" => sortDescending
+                ? filteredQuery.OrderBy(x => x.Priority.Id)
+                : filteredQuery.OrderByDescending(x => x.Priority.Id),
+            "disputenumber" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.DisputeNumber)
+                : filteredQuery.OrderBy(x => x.DisputeNumber),
+            _ => filteredQuery.OrderByDescending(x => x.Priority.Id).ThenBy(x => x.DueDate)
+        };
+
+        // Sayfalama
+        var items = filteredQuery
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return (items, totalCount);
+    }
+
     public async Task AddAsync(DisputeAggregate dispute, CancellationToken cancellationToken = default)
     {
         await _context.Disputes.AddAsync(dispute, cancellationToken);

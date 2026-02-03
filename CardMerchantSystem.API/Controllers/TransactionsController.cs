@@ -119,6 +119,22 @@ public class TransactionsController : ApiControllerBase
     }
 
     /// <summary>
+    /// İşlem istatistiklerini getirir (Dashboard için)
+    /// </summary>
+    [HttpGet("stats")]
+    public async Task<ActionResult<TransactionStatsDto>> GetStats(
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate,
+        [FromQuery] Guid? merchantId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetTransactionStatsQuery(startDate, endDate, merchantId);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Kart limit bilgisini getirir
     /// </summary>
     [HttpGet("limits/{cardNumberMasked}")]

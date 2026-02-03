@@ -1,4 +1,5 @@
-﻿using Dispute.Application.Commands;
+﻿using CardMerchantSystem.Shared.Kernel;
+using Dispute.Application.Commands;
 using Dispute.Application.DTOs;
 using Dispute.Application.Queries;
 using MediatR;
@@ -17,6 +18,19 @@ public class DisputesController : ControllerBase
     public DisputesController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    /// <summary>
+    /// İtirazları sayfalı listeler
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<DisputeDto>>> GetPaged(
+        [FromQuery] DisputeFilterDto filter,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetDisputesPagedQuery(filter);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
