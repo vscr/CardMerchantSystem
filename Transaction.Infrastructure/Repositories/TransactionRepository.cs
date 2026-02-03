@@ -18,6 +18,7 @@ public class TransactionRepository : ITransactionRepository
 
     public async Task<TransactionAggregate?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        // GetById tracking gerekebilir (update için), bu yüzden AsNoTracking yok
         return await _context.Transactions
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
@@ -31,6 +32,7 @@ public class TransactionRepository : ITransactionRepository
     public async Task<IReadOnlyList<TransactionAggregate>> GetByMerchantIdAsync(Guid merchantId, CancellationToken cancellationToken = default)
     {
         return await _context.Transactions
+            .AsNoTracking()
             .Where(x => x.MerchantId == merchantId)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -39,6 +41,7 @@ public class TransactionRepository : ITransactionRepository
     public async Task<IReadOnlyList<TransactionAggregate>> GetByTerminalIdAsync(Guid terminalId, CancellationToken cancellationToken = default)
     {
         return await _context.Transactions
+            .AsNoTracking()
             .Where(x => x.TerminalId == terminalId)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -47,6 +50,7 @@ public class TransactionRepository : ITransactionRepository
     public async Task<IReadOnlyList<TransactionAggregate>> GetByCardNumberAsync(string cardNumberMasked, CancellationToken cancellationToken = default)
     {
         return await _context.Transactions
+            .AsNoTracking()
             .Where(x => x.CardNumberMasked == cardNumberMasked)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -54,29 +58,28 @@ public class TransactionRepository : ITransactionRepository
 
     public async Task<IReadOnlyList<TransactionAggregate>> GetByStatusAsync(TransactionStatus status, CancellationToken cancellationToken = default)
     {
-        var transactions = await _context.Transactions
-            .ToListAsync(cancellationToken);
-
-        return transactions
-            .Where(x => x.Status.Id == status.Id)
+        var statusId = status.Id;
+        return await _context.Transactions
+            .AsNoTracking()
+            .Where(x => EF.Property<int>(x, "StatusId") == statusId)
             .OrderByDescending(x => x.CreatedAt)
-            .ToList();
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<TransactionAggregate>> GetPendingSettlementAsync(CancellationToken cancellationToken = default)
     {
-        var transactions = await _context.Transactions
-            .ToListAsync(cancellationToken);
-
-        return transactions
-            .Where(x => x.Status.Id == TransactionStatus.Approved.Id)
+        var approvedStatusId = TransactionStatus.Approved.Id;
+        return await _context.Transactions
+            .AsNoTracking()
+            .Where(x => EF.Property<int>(x, "StatusId") == approvedStatusId)
             .OrderBy(x => x.CreatedAt)
-            .ToList();
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<TransactionAggregate>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
         return await _context.Transactions
+            .AsNoTracking()
             .Where(x => x.CreatedAt >= startDate && x.CreatedAt <= endDate)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -95,8 +98,10 @@ public class TransactionRepository : ITransactionRepository
         bool sortDescending = false,
         CancellationToken cancellationToken = default)
     {
-        // Temel sorgu
-        var query = _context.Transactions.AsQueryable();
+        // AsNoTracking - Read-only sorgu için memory optimizasyonu
+        var query = _context.Transactions.AsNoTracking().AsQueryable();
+
+        // === TÜM FİLTRELER DB TARAFINDA ===
 
         // Merchant filtresi
         if (merchantId.HasValue)
@@ -121,49 +126,49 @@ public class TransactionRepository : ITransactionRepository
             query = query.Where(x => x.CreatedAt <= endDate.Value);
         }
 
-        // Memory'de filtrelenecekler için tüm veriyi çek
-        var allTransactions = await query.ToListAsync(cancellationToken);
-
-        IEnumerable<TransactionAggregate> filteredQuery = allTransactions;
-
-        // Status filtresi (Smart Enum - memory'de)
+        // Status filtresi - DB'de int olarak filtreleme (Smart Enum dönüşümü configuration'da var)
         if (status != null)
         {
-            filteredQuery = filteredQuery.Where(x => x.Status.Id == status.Id);
+            var statusId = status.Id;
+            query = query.Where(x => EF.Property<int>(x, "StatusId") == statusId);
         }
 
-        // Transaction Type filtresi (Smart Enum - memory'de)
+        // Transaction Type filtresi - DB'de int olarak filtreleme
         if (transactionType != null)
         {
-            filteredQuery = filteredQuery.Where(x => x.TransactionType.Id == transactionType.Id);
+            var typeId = transactionType.Id;
+            query = query.Where(x => EF.Property<int>(x, "TransactionTypeId") == typeId);
         }
 
-        // Toplam sayı
-        var totalCount = filteredQuery.Count();
+        // === COUNT SORGUSU (Ayrı ve optimize) ===
+        var totalCount = await query.CountAsync(cancellationToken);
 
-        // Sıralama
-        filteredQuery = sortBy?.ToLowerInvariant() switch
+        // === SIRALAMA (DB tarafında) ===
+        IOrderedQueryable<TransactionAggregate> orderedQuery = sortBy?.ToLowerInvariant() switch
         {
             "amount" => sortDescending
-                ? filteredQuery.OrderByDescending(x => x.Amount.Amount)
-                : filteredQuery.OrderBy(x => x.Amount.Amount),
+                ? query.OrderByDescending(x => x.Amount.Amount)
+                : query.OrderBy(x => x.Amount.Amount),
             "createdat" => sortDescending
-                ? filteredQuery.OrderByDescending(x => x.CreatedAt)
-                : filteredQuery.OrderBy(x => x.CreatedAt),
+                ? query.OrderByDescending(x => x.CreatedAt)
+                : query.OrderBy(x => x.CreatedAt),
             "merchantcode" => sortDescending
-                ? filteredQuery.OrderByDescending(x => x.MerchantCode)
-                : filteredQuery.OrderBy(x => x.MerchantCode),
+                ? query.OrderByDescending(x => x.MerchantCode)
+                : query.OrderBy(x => x.MerchantCode),
             "referencenumber" => sortDescending
-                ? filteredQuery.OrderByDescending(x => x.ReferenceNumber.Value)
-                : filteredQuery.OrderBy(x => x.ReferenceNumber.Value),
-            _ => filteredQuery.OrderByDescending(x => x.CreatedAt)
+                ? query.OrderByDescending(x => x.ReferenceNumber.Value)
+                : query.OrderBy(x => x.ReferenceNumber.Value),
+            "status" => sortDescending
+                ? query.OrderByDescending(x => EF.Property<int>(x, "StatusId"))
+                : query.OrderBy(x => EF.Property<int>(x, "StatusId")),
+            _ => query.OrderByDescending(x => x.CreatedAt)
         };
 
-        // Sayfalama
-        var items = filteredQuery
+        // === SAYFALAMA (DB tarafında - OFFSET/FETCH) ===
+        var items = await orderedQuery
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         return (items, totalCount);
     }
@@ -173,17 +178,23 @@ public class TransactionRepository : ITransactionRepository
         var startOfDay = date.Date;
         var endOfDay = startOfDay.AddDays(1);
 
-        var transactions = await _context.Transactions
+        // Status: Approved(2), Settled(7)
+        var validStatusIds = new[] { TransactionStatus.Approved.Id, TransactionStatus.Settled.Id };
+
+        // TransactionType: Sale(1), PreAuth(4), CashAdvance(6) - DecreasesLimit = true
+        var decreasesLimitTypeIds = new[] { TransactionType.Sale.Id, TransactionType.PreAuth.Id, TransactionType.CashAdvance.Id };
+
+        // Tüm filtreleme ve SUM DB tarafında
+        var total = await _context.Transactions
+            .AsNoTracking()
             .Where(x => x.CardNumberMasked == cardNumberMasked &&
                         x.CreatedAt >= startOfDay &&
-                        x.CreatedAt < endOfDay)
-            .ToListAsync(cancellationToken);
+                        x.CreatedAt < endOfDay &&
+                        validStatusIds.Contains(EF.Property<int>(x, "StatusId")) &&
+                        decreasesLimitTypeIds.Contains(EF.Property<int>(x, "TransactionTypeId")))
+            .SumAsync(x => x.Amount.Amount, cancellationToken);
 
-        return transactions
-            .Where(x => x.Status.Id == TransactionStatus.Approved.Id ||
-                        x.Status.Id == TransactionStatus.Settled.Id)
-            .Where(x => x.TransactionType.DecreasesLimit)
-            .Sum(x => x.Amount.Amount);
+        return total;
     }
 
     public async Task<decimal> GetMonthlyTotalByCardAsync(string cardNumberMasked, int year, int month, CancellationToken cancellationToken = default)
@@ -191,17 +202,23 @@ public class TransactionRepository : ITransactionRepository
         var startOfMonth = new DateTime(year, month, 1);
         var endOfMonth = startOfMonth.AddMonths(1);
 
-        var transactions = await _context.Transactions
+        // Status: Approved(2), Settled(7)
+        var validStatusIds = new[] { TransactionStatus.Approved.Id, TransactionStatus.Settled.Id };
+
+        // TransactionType: Sale(1), PreAuth(4), CashAdvance(6) - DecreasesLimit = true
+        var decreasesLimitTypeIds = new[] { TransactionType.Sale.Id, TransactionType.PreAuth.Id, TransactionType.CashAdvance.Id };
+
+        // Tüm filtreleme ve SUM DB tarafında
+        var total = await _context.Transactions
+            .AsNoTracking()
             .Where(x => x.CardNumberMasked == cardNumberMasked &&
                         x.CreatedAt >= startOfMonth &&
-                        x.CreatedAt < endOfMonth)
-            .ToListAsync(cancellationToken);
+                        x.CreatedAt < endOfMonth &&
+                        validStatusIds.Contains(EF.Property<int>(x, "StatusId")) &&
+                        decreasesLimitTypeIds.Contains(EF.Property<int>(x, "TransactionTypeId")))
+            .SumAsync(x => x.Amount.Amount, cancellationToken);
 
-        return transactions
-            .Where(x => x.Status.Id == TransactionStatus.Approved.Id ||
-                        x.Status.Id == TransactionStatus.Settled.Id)
-            .Where(x => x.TransactionType.DecreasesLimit)
-            .Sum(x => x.Amount.Amount);
+        return total;
     }
 
     public async Task AddAsync(TransactionAggregate transaction, CancellationToken cancellationToken = default)

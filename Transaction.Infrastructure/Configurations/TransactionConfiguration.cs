@@ -90,11 +90,60 @@ public class TransactionConfiguration : IEntityTypeConfiguration<TransactionAggr
         // Ignore Domain Events
         builder.Ignore(x => x.DomainEvents);
 
-        // Indexes
-        builder.HasIndex(x => x.MerchantId);
-        builder.HasIndex(x => x.TerminalId);
-        builder.HasIndex(x => x.CardNumberMasked);
-        builder.HasIndex(x => x.CreatedAt);
-        builder.HasIndex(x => x.OriginalTransactionId);
+        // ============================================
+        // INDEXES - Performance Optimization
+        // ============================================
+
+        // === SIMPLE INDEXES ===
+        // Primary lookup patterns
+        builder.HasIndex(x => x.MerchantId)
+            .HasDatabaseName("IX_Transactions_MerchantId");
+
+        builder.HasIndex(x => x.TerminalId)
+            .HasDatabaseName("IX_Transactions_TerminalId");
+
+        builder.HasIndex(x => x.CardNumberMasked)
+            .HasDatabaseName("IX_Transactions_CardNumberMasked");
+
+        builder.HasIndex(x => x.CreatedAt)
+            .HasDatabaseName("IX_Transactions_CreatedAt");
+
+        builder.HasIndex(x => x.OriginalTransactionId)
+            .HasDatabaseName("IX_Transactions_OriginalTransactionId");
+
+        // === COMPOSITE INDEXES (En sık kullanılan sorgu patternleri) ===
+
+        // Pattern 1: Merchant + Date range (En yaygın call center sorgusu)
+        builder.HasIndex(x => new { x.MerchantId, x.CreatedAt })
+            .HasDatabaseName("IX_Transactions_MerchantId_CreatedAt")
+            .IsDescending(false, true); // MerchantId ASC, CreatedAt DESC
+
+        // Pattern 2: Card + Date range (Kart bazlı işlem sorgulama)
+        builder.HasIndex(x => new { x.CardNumberMasked, x.CreatedAt })
+            .HasDatabaseName("IX_Transactions_CardNumber_CreatedAt")
+            .IsDescending(false, true);
+
+        // Pattern 3: Status + Date (Pending settlement, reporting)
+        builder.HasIndex(x => new { x.Status, x.CreatedAt })
+            .HasDatabaseName("IX_Transactions_Status_CreatedAt")
+            .IsDescending(false, true);
+
+        // Pattern 4: Date + Status + Type (Dashboard stats, raporlama)
+        builder.HasIndex(x => new { x.CreatedAt, x.Status, x.TransactionType })
+            .HasDatabaseName("IX_Transactions_Date_Status_Type");
+
+        // Pattern 5: Card + Status + Type + Date (Limit hesaplama için kritik!)
+        builder.HasIndex(x => new { x.CardNumberMasked, x.Status, x.TransactionType, x.CreatedAt })
+            .HasDatabaseName("IX_Transactions_Card_Status_Type_Date");
+
+        // Pattern 6: Settlement batch lookup
+        builder.HasIndex(x => new { x.BatchNumber, x.Status })
+            .HasDatabaseName("IX_Transactions_BatchNumber_Status")
+            .HasFilter("[BatchNumber] IS NOT NULL");
+
+        // Pattern 7: Terminal + Date (Terminal bazlı raporlama)
+        builder.HasIndex(x => new { x.TerminalId, x.CreatedAt })
+            .HasDatabaseName("IX_Transactions_TerminalId_CreatedAt")
+            .IsDescending(false, true);
     }
 }
