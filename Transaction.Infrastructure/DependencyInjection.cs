@@ -4,6 +4,7 @@ using StackExchange.Redis;
 using Transaction.Domain.Repositories;
 using Transaction.Domain.Services;
 using Transaction.Infrastructure.Configurations;
+using Transaction.Infrastructure.Dapper;
 using Transaction.Infrastructure.Persistence;
 using Transaction.Infrastructure.Repositories;
 using Transaction.Infrastructure.Services;
@@ -17,7 +18,7 @@ public static class DependencyInjection
         string connectionString,
         string redisConnectionString)
     {
-        // DbContext
+        // DbContext (Write operations)
         services.AddDbContext<TransactionDbContext>(options =>
             options.UseSqlServer(connectionString, b =>
                 b.MigrationsAssembly(typeof(TransactionDbContext).Assembly.FullName)));
@@ -26,8 +27,13 @@ public static class DependencyInjection
         services.AddSingleton<IConnectionMultiplexer>(sp =>
             ConnectionMultiplexer.Connect(redisConnectionString));
 
-        // Repositories
+        // === EF Core Repositories (Write + Complex Queries) ===
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+
+        // === Dapper Repositories (High-Performance Read) ===
+        services.AddSingleton<IDapperContext, DapperContext>();
+        services.AddScoped<ITransactionReadRepository, TransactionReadRepository>();
+        services.AddScoped<ITransactionReportRepository, TransactionReportRepository>();
 
         // Services
         services.AddScoped<ILimitService, LimitService>();

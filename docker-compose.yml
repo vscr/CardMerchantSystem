@@ -1,5 +1,3 @@
-# CardMerchantSystem/docker-compose.yml
-
 version: '3.8'
 
 services:
@@ -107,12 +105,30 @@ services:
       timeout: 5s
       retries: 5
 
+  # ═══════════════════════════════════════════════════════
+  # REDISINSIGHT (Redis GUI)
+  # ═══════════════════════════════════════════════════════
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: cardmerchant-redisinsight
+    ports:
+      - "5540:5540"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - redisinsight-data:/data
+    networks:
+      - cardmerchant-network
+
 volumes:
   elasticsearch-data:
     driver: local
   postgres-data:
     driver: local
   redis-data:
+    driver: local
+  redisinsight-data:
     driver: local
 
 networks:
