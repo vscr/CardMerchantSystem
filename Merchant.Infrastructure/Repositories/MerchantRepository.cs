@@ -80,6 +80,66 @@ public class MerchantRepository : IMerchantRepository
             .ToList();
     }
 
+    public async Task<(IReadOnlyList<MerchantAggregate> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        MerchantStatus? status = null,
+        string? searchTerm = null,
+        string? sortBy = null,
+        bool sortDescending = false,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Merchants.AsQueryable();
+
+        // Status filtresi - Smart Enum olduğu için memory'de filtrelememiz gerekiyor
+        var allMerchants = await query.ToListAsync(cancellationToken);
+
+        IEnumerable<MerchantAggregate> filteredQuery = allMerchants;
+
+        // Status filtresi
+        if (status != null)
+        {
+            filteredQuery = filteredQuery.Where(x => x.Status.Id == status.Id);
+        }
+
+        // Arama filtresi
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.ToLowerInvariant();
+            filteredQuery = filteredQuery.Where(x =>
+                x.Name.ToLowerInvariant().Contains(term) ||
+                x.TradeName.ToLowerInvariant().Contains(term) ||
+                x.MerchantCode.Value.ToLowerInvariant().Contains(term) ||
+                x.Email.ToLowerInvariant().Contains(term));
+        }
+
+        // Toplam sayı
+        var totalCount = filteredQuery.Count();
+
+        // Sıralama
+        filteredQuery = sortBy?.ToLowerInvariant() switch
+        {
+            "name" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.Name)
+                : filteredQuery.OrderBy(x => x.Name),
+            "createdat" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.CreatedAt)
+                : filteredQuery.OrderBy(x => x.CreatedAt),
+            "merchantcode" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.MerchantCode.Value)
+                : filteredQuery.OrderBy(x => x.MerchantCode.Value),
+            _ => filteredQuery.OrderByDescending(x => x.CreatedAt)
+        };
+
+        // Sayfalama
+        var items = filteredQuery
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return (items, totalCount);
+    }
+
     public async Task AddAsync(MerchantAggregate merchant, CancellationToken cancellationToken = default)
     {
         await _context.Merchants.AddAsync(merchant, cancellationToken);

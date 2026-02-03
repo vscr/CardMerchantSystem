@@ -25,6 +25,18 @@ public interface IMerchantRepository
 
     Task<IReadOnlyList<MerchantAggregate>> GetAllActiveAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Sayfalı üye işyeri listesi getirir
+    /// </summary>
+    Task<(IReadOnlyList<MerchantAggregate> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        MerchantStatus? status = null,
+        string? searchTerm = null,
+        string? sortBy = null,
+        bool sortDescending = false,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(MerchantAggregate merchant, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(MerchantAggregate merchant, CancellationToken cancellationToken = default);

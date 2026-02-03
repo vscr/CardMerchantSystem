@@ -12,7 +12,9 @@ public class MerchantDto
     public string TaxNumber { get; set; } = null!;
     public string TaxOffice { get; set; } = null!;
     public string MerchantType { get; set; } = null!;
+    public int MerchantTypeId { get; set; }
     public string Status { get; set; } = null!;
+    public int StatusId { get; set; }
     public string StatusDisplayName { get; set; } = null!;
 
     // İletişim

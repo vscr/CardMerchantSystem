@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using CardMerchantSystem.Shared.Kernel;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Transaction.Application.Commands;
@@ -15,6 +16,19 @@ public class TransactionsController : ApiControllerBase
     public TransactionsController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    /// <summary>
+    /// İşlemleri sayfalı listeler
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<TransactionDto>>> GetPaged(
+        [FromQuery] TransactionFilterDto filter,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetTransactionsPagedQuery(filter);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
@@ -70,6 +84,35 @@ public class TransactionsController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetTransactionsByMerchantQuery(merchantId);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Kart numarasına göre işlemleri getirir
+    /// </summary>
+    [HttpGet("by-card/{cardNumberMasked}")]
+    public async Task<ActionResult<IReadOnlyList<TransactionDto>>> GetByCard(
+        string cardNumberMasked,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetTransactionsByCardQuery(cardNumberMasked);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Tarih aralığına göre işlemleri getirir
+    /// </summary>
+    [HttpGet("by-date")]
+    public async Task<ActionResult<IReadOnlyList<TransactionDto>>> GetByDateRange(
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetTransactionsByDateRangeQuery(startDate, endDate);
         var result = await _mediator.Send(query, cancellationToken);
 
         return Ok(result);

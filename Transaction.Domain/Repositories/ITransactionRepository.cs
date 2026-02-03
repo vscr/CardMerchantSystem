@@ -26,6 +26,22 @@ public interface ITransactionRepository
 
     Task<IReadOnlyList<TransactionAggregate>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Sayfalı işlem listesi getirir
+    /// </summary>
+    Task<(IReadOnlyList<TransactionAggregate> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        TransactionStatus? status = null,
+        TransactionType? transactionType = null,
+        Guid? merchantId = null,
+        string? cardNumberMasked = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        string? sortBy = null,
+        bool sortDescending = false,
+        CancellationToken cancellationToken = default);
+
     Task<decimal> GetDailyTotalByCardAsync(string cardNumberMasked, DateTime date, CancellationToken cancellationToken = default);
 
     Task<decimal> GetMonthlyTotalByCardAsync(string cardNumberMasked, int year, int month, CancellationToken cancellationToken = default);

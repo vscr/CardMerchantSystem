@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using CardMerchantSystem.Shared.Kernel;
+using MediatR;
 using Merchant.Application.Commands;
 using Merchant.Application.DTOs;
 using Merchant.Application.Queries;
@@ -17,6 +18,19 @@ public class MerchantsController : ControllerBase
     public MerchantsController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Üye işyerlerini sayfalı listeler
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<MerchantDto>>> GetPaged(
+        [FromQuery] MerchantFilterDto filter,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetMerchantsPagedQuery(filter);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>

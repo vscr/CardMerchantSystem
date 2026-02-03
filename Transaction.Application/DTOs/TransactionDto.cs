@@ -8,8 +8,10 @@ public class TransactionDto
     public Guid Id { get; set; }
     public string ReferenceNumber { get; set; } = null!;
     public string TransactionType { get; set; } = null!;
+    public int TransactionTypeId { get; set; }
     public string TransactionTypeDisplayName { get; set; } = null!;
     public string Status { get; set; } = null!;
+    public int StatusId { get; set; }
     public string StatusDisplayName { get; set; } = null!;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = null!;

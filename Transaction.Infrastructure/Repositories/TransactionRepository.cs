@@ -82,6 +82,92 @@ public class TransactionRepository : ITransactionRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<(IReadOnlyList<TransactionAggregate> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        TransactionStatus? status = null,
+        TransactionType? transactionType = null,
+        Guid? merchantId = null,
+        string? cardNumberMasked = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        string? sortBy = null,
+        bool sortDescending = false,
+        CancellationToken cancellationToken = default)
+    {
+        // Temel sorgu
+        var query = _context.Transactions.AsQueryable();
+
+        // Merchant filtresi
+        if (merchantId.HasValue)
+        {
+            query = query.Where(x => x.MerchantId == merchantId.Value);
+        }
+
+        // Kart numarası filtresi
+        if (!string.IsNullOrWhiteSpace(cardNumberMasked))
+        {
+            query = query.Where(x => x.CardNumberMasked == cardNumberMasked);
+        }
+
+        // Tarih filtresi
+        if (startDate.HasValue)
+        {
+            query = query.Where(x => x.CreatedAt >= startDate.Value);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(x => x.CreatedAt <= endDate.Value);
+        }
+
+        // Memory'de filtrelenecekler için tüm veriyi çek
+        var allTransactions = await query.ToListAsync(cancellationToken);
+
+        IEnumerable<TransactionAggregate> filteredQuery = allTransactions;
+
+        // Status filtresi (Smart Enum - memory'de)
+        if (status != null)
+        {
+            filteredQuery = filteredQuery.Where(x => x.Status.Id == status.Id);
+        }
+
+        // Transaction Type filtresi (Smart Enum - memory'de)
+        if (transactionType != null)
+        {
+            filteredQuery = filteredQuery.Where(x => x.TransactionType.Id == transactionType.Id);
+        }
+
+        // Toplam sayı
+        var totalCount = filteredQuery.Count();
+
+        // Sıralama
+        filteredQuery = sortBy?.ToLowerInvariant() switch
+        {
+            "amount" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.Amount.Amount)
+                : filteredQuery.OrderBy(x => x.Amount.Amount),
+            "createdat" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.CreatedAt)
+                : filteredQuery.OrderBy(x => x.CreatedAt),
+            "merchantcode" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.MerchantCode)
+                : filteredQuery.OrderBy(x => x.MerchantCode),
+            "referencenumber" => sortDescending
+                ? filteredQuery.OrderByDescending(x => x.ReferenceNumber.Value)
+                : filteredQuery.OrderBy(x => x.ReferenceNumber.Value),
+            _ => filteredQuery.OrderByDescending(x => x.CreatedAt)
+        };
+
+        // Sayfalama
+        var items = filteredQuery
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return (items, totalCount);
+    }
+
     public async Task<decimal> GetDailyTotalByCardAsync(string cardNumberMasked, DateTime date, CancellationToken cancellationToken = default)
     {
         var startOfDay = date.Date;
