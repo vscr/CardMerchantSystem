@@ -31,6 +31,49 @@ public class TransactionsFastController : ControllerBase
     }
 
     /// <summary>
+    /// [DAPPER] Health check - Load test sırasında read çalışıyor mu?
+    /// </summary>
+    [HttpGet("health")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(object), 200)]
+    public async Task<ActionResult> HealthCheck(CancellationToken cancellationToken = default)
+    {
+        var sw = Stopwatch.StartNew();
+
+        try
+        {
+            // Basit bir count sorgusu - WITH NOLOCK sayesinde lock beklemez
+            var filter = new TransactionQueryFilter { PageNumber = 1, PageSize = 1 };
+            var result = await _readRepository.GetPagedAsync(filter, cancellationToken);
+
+            sw.Stop();
+
+            return Ok(new
+            {
+                status = "healthy",
+                dapperWorking = true,
+                totalTransactions = result.TotalCount,
+                queryTimeMs = sw.ElapsedMilliseconds,
+                timestamp = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            _logger.LogError(ex, "Health check failed");
+
+            return Ok(new
+            {
+                status = "unhealthy",
+                dapperWorking = false,
+                error = ex.Message,
+                queryTimeMs = sw.ElapsedMilliseconds,
+                timestamp = DateTime.UtcNow
+            });
+        }
+    }
+
+    /// <summary>
     /// [DAPPER] Sayfalı işlem listesi - Yüksek performans
     /// </summary>
     [HttpGet]
