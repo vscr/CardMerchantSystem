@@ -5,8 +5,30 @@ namespace CardMerchantSystem.API.Configuration;
 
 public static class RateLimitingConfiguration
 {
-    public static IServiceCollection AddRateLimitingServices(this IServiceCollection services)
+    public static IServiceCollection AddRateLimitingServices(this IServiceCollection services, IConfiguration configuration)
     {
+        // Check if rate limiting is enabled
+        var isEnabled = configuration.GetValue<bool>("RateLimiting:Enabled", true);
+
+        if (!isEnabled)
+        {
+            // Rate limiting disabled - add dummy/no-op limiter
+            services.AddRateLimiter(options =>
+            {
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                    RateLimitPartition.GetNoLimiter("disabled"));
+
+                // Add no-op policies so [EnableRateLimiting] attributes don't fail
+                options.AddPolicy("Strict", context => RateLimitPartition.GetNoLimiter("disabled"));
+                options.AddPolicy("Standard", context => RateLimitPartition.GetNoLimiter("disabled"));
+                options.AddPolicy("Relaxed", context => RateLimitPartition.GetNoLimiter("disabled"));
+                options.AddPolicy("PerUser", context => RateLimitPartition.GetNoLimiter("disabled"));
+                options.AddPolicy("Transaction", context => RateLimitPartition.GetNoLimiter("disabled"));
+            });
+
+            return services;
+        }
+
         services.AddRateLimiter(options =>
         {
             // Global limiter - Tüm API için
@@ -17,8 +39,8 @@ public static class RateLimitingConfiguration
 
                 return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = 100,           // 100 istek
-                    Window = TimeSpan.FromMinutes(1), // 1 dakikada
+                    PermitLimit = configuration.GetValue<int>("RateLimiting:Global:PermitLimit", 100),
+                    Window = TimeSpan.FromMinutes(configuration.GetValue<int>("RateLimiting:Global:WindowMinutes", 1)),
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                     QueueLimit = 10
                 });
@@ -27,8 +49,8 @@ public static class RateLimitingConfiguration
             // Policy: Strict - Login, Register gibi hassas endpoint'ler
             options.AddFixedWindowLimiter("Strict", opt =>
             {
-                opt.PermitLimit = 5;
-                opt.Window = TimeSpan.FromMinutes(1);
+                opt.PermitLimit = configuration.GetValue<int>("RateLimiting:Strict:PermitLimit", 5);
+                opt.Window = TimeSpan.FromMinutes(configuration.GetValue<int>("RateLimiting:Strict:WindowMinutes", 1));
                 opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 opt.QueueLimit = 0;
             });
@@ -36,8 +58,8 @@ public static class RateLimitingConfiguration
             // Policy: Standard - Normal CRUD işlemleri
             options.AddFixedWindowLimiter("Standard", opt =>
             {
-                opt.PermitLimit = 60;
-                opt.Window = TimeSpan.FromMinutes(1);
+                opt.PermitLimit = configuration.GetValue<int>("RateLimiting:Standard:PermitLimit", 60);
+                opt.Window = TimeSpan.FromMinutes(configuration.GetValue<int>("RateLimiting:Standard:WindowMinutes", 1));
                 opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 opt.QueueLimit = 5;
             });

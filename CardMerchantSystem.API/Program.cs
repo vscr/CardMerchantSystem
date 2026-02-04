@@ -317,7 +317,7 @@ try
     builder.Services.AddResilienceServices(builder.Configuration);
 
     // Rate Limiting
-    builder.Services.AddRateLimitingServices();
+    builder.Services.AddRateLimitingServices(builder.Configuration);
 
     Log.Information("All modules registered successfully");
 
