@@ -19,8 +19,11 @@ public class DapperContext : IDapperContext
 
     public DapperContext(IConfiguration configuration)
     {
+        // Önce TransactionDb'yi dene, yoksa DefaultConnection'ı kullan
         _connectionString = configuration.GetConnectionString("TransactionDb")
-            ?? throw new InvalidOperationException("TransactionDb connection string not found");
+            ?? configuration.GetConnectionString("DefaultConnection")
+            ?? configuration["Database:SqlServerConnection"]
+            ?? throw new InvalidOperationException("No valid connection string found. Please configure 'ConnectionStrings:DefaultConnection' or 'Database:SqlServerConnection'");
     }
 
     public IDbConnection CreateConnection()

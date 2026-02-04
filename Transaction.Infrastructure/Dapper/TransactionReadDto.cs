@@ -1,10 +1,12 @@
-﻿namespace Transaction.Infrastructure.Dapper;
+﻿using Transaction.Domain.Enums;
+
+namespace Transaction.Infrastructure.Dapper;
 
 /// <summary>
-/// Dapper okuma işlemleri için hafif DTO
-/// Entity'ye dönüşüm gerektirmez, direkt kullanılır
+/// Dapper okuma işlemleri için internal DTO
+/// Controller'da Application DTO'larına map edilir
 /// </summary>
-public class TransactionReadDto
+public class TransactionReadModel
 {
     public Guid Id { get; set; }
     public string ReferenceNumber { get; set; } = null!;
@@ -26,12 +28,37 @@ public class TransactionReadDto
     public DateTime? SettledAt { get; set; }
     public string? BatchNumber { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    // Smart Enum properties (hesaplanır)
+    public string TransactionType => TransactionTypeEnum?.Name ?? "Unknown";
+    public string TransactionTypeDisplayName => TransactionTypeEnum?.DisplayName ?? "Bilinmiyor";
+    public string Status => StatusEnum?.Name ?? "Unknown";
+    public string StatusDisplayName => StatusEnum?.DisplayName ?? "Bilinmiyor";
+    public string? DeclineReason => DeclineReasonEnum?.DisplayName;
+    public string? FraudCheckResult => FraudCheckResultEnum?.DisplayName;
+
+    // Helper properties
+    private TransactionType? TransactionTypeEnum =>
+        Transaction.Domain.Enums.TransactionType.FromId<TransactionType>(TransactionTypeId);
+
+    private TransactionStatus? StatusEnum =>
+        Transaction.Domain.Enums.TransactionStatus.FromId<TransactionStatus>(StatusId);
+
+    private DeclineReason? DeclineReasonEnum =>
+        DeclineReasonId.HasValue
+            ? Transaction.Domain.Enums.DeclineReason.FromId<DeclineReason>(DeclineReasonId.Value)
+            : null;
+
+    private FraudCheckResult? FraudCheckResultEnum =>
+        FraudCheckResultId.HasValue
+            ? Transaction.Domain.Enums.FraudCheckResult.FromId<FraudCheckResult>(FraudCheckResultId.Value)
+            : null;
 }
 
 /// <summary>
-/// İşlem istatistikleri DTO (Dashboard için)
+/// İşlem istatistikleri - DB'den direkt okunan model
 /// </summary>
-public class TransactionStatsReadDto
+public class TransactionStatsReadModel
 {
     public int TotalCount { get; set; }
     public decimal TotalAmount { get; set; }
@@ -58,19 +85,26 @@ public class TransactionStatsReadDto
 }
 
 /// <summary>
-/// İşlem tipi bazlı istatistik
+/// İşlem tipi bazlı istatistik - DB'den okunan model
 /// </summary>
-public class TransactionTypeStatsReadDto
+public class TransactionTypeStatsReadModel
 {
     public int TransactionTypeId { get; set; }
     public int Count { get; set; }
     public decimal Amount { get; set; }
+
+    // Hesaplanan alanlar
+    public string TransactionType => TransactionTypeEnum?.Name ?? "Unknown";
+    public string TransactionTypeDisplayName => TransactionTypeEnum?.DisplayName ?? "Bilinmiyor";
+
+    private TransactionType? TransactionTypeEnum =>
+        Transaction.Domain.Enums.TransactionType.FromId<TransactionType>(TransactionTypeId);
 }
 
 /// <summary>
 /// Günlük trend verisi
 /// </summary>
-public class DailyTrendReadDto
+public class DailyTrendReadModel
 {
     public DateTime Date { get; set; }
     public int Count { get; set; }
@@ -82,7 +116,7 @@ public class DailyTrendReadDto
 /// <summary>
 /// Saatlik dağılım
 /// </summary>
-public class HourlyDistributionReadDto
+public class HourlyDistributionReadModel
 {
     public int Hour { get; set; }
     public int Count { get; set; }
@@ -92,7 +126,7 @@ public class HourlyDistributionReadDto
 /// <summary>
 /// Top merchant özeti
 /// </summary>
-public class TopMerchantReadDto
+public class TopMerchantReadModel
 {
     public Guid MerchantId { get; set; }
     public string MerchantCode { get; set; } = null!;
@@ -105,17 +139,23 @@ public class TopMerchantReadDto
 /// <summary>
 /// Decline reason istatistiği
 /// </summary>
-public class DeclineReasonStatsReadDto
+public class DeclineReasonStatsReadModel
 {
     public int DeclineReasonId { get; set; }
     public int Count { get; set; }
     public decimal Amount { get; set; }
+
+    public string DeclineReason => DeclineReasonEnum?.Name ?? "Unknown";
+    public string DeclineReasonDisplayName => DeclineReasonEnum?.DisplayName ?? "Bilinmiyor";
+
+    private DeclineReason? DeclineReasonEnum =>
+        Transaction.Domain.Enums.DeclineReason.FromId<DeclineReason>(DeclineReasonId);
 }
 
 /// <summary>
 /// Settlement batch özeti
 /// </summary>
-public class SettlementBatchReadDto
+public class SettlementBatchReadModel
 {
     public string BatchNumber { get; set; } = null!;
     public int TransactionCount { get; set; }
@@ -128,11 +168,17 @@ public class SettlementBatchReadDto
 /// <summary>
 /// Fraud istatistiği
 /// </summary>
-public class FraudStatsReadDto
+public class FraudStatsReadModel
 {
     public int FraudCheckResultId { get; set; }
     public int Count { get; set; }
     public decimal Amount { get; set; }
     public decimal AvgFraudScore { get; set; }
     public int MaxFraudScore { get; set; }
+
+    public string FraudCheckResult => FraudCheckResultEnum?.Name ?? "Unknown";
+    public string FraudCheckResultDisplayName => FraudCheckResultEnum?.DisplayName ?? "Bilinmiyor";
+
+    private FraudCheckResult? FraudCheckResultEnum =>
+        Transaction.Domain.Enums.FraudCheckResult.FromId<FraudCheckResult>(FraudCheckResultId);
 }

@@ -1,6 +1,5 @@
 ﻿using Dapper;
 using Microsoft.Extensions.Logging;
-using Transaction.Domain.Enums;
 
 namespace Transaction.Infrastructure.Dapper;
 
@@ -9,48 +8,48 @@ namespace Transaction.Infrastructure.Dapper;
 /// </summary>
 public interface ITransactionReportRepository
 {
-    Task<TransactionStatsReadDto> GetStatsAsync(
+    Task<TransactionStatsReadModel> GetStatsAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<TransactionTypeStatsReadDto>> GetStatsByTransactionTypeAsync(
+    Task<IEnumerable<TransactionTypeStatsReadModel>> GetStatsByTransactionTypeAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<DailyTrendReadDto>> GetDailyTrendAsync(
+    Task<IEnumerable<DailyTrendReadModel>> GetDailyTrendAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<HourlyDistributionReadDto>> GetHourlyDistributionAsync(
+    Task<IEnumerable<HourlyDistributionReadModel>> GetHourlyDistributionAsync(
         DateTime date,
         Guid? merchantId = null,
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<TopMerchantReadDto>> GetTopMerchantsAsync(
+    Task<IEnumerable<TopMerchantReadModel>> GetTopMerchantsAsync(
         DateTime startDate,
         DateTime endDate,
         int limit = 10,
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<DeclineReasonStatsReadDto>> GetDeclineReasonStatsAsync(
+    Task<IEnumerable<DeclineReasonStatsReadModel>> GetDeclineReasonStatsAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<SettlementBatchReadDto>> GetSettlementBatchSummaryAsync(
+    Task<IEnumerable<SettlementBatchReadModel>> GetSettlementBatchSummaryAsync(
         string? batchNumber = null,
         DateTime? startDate = null,
         DateTime? endDate = null,
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<FraudStatsReadDto>> GetFraudStatsAsync(
+    Task<IEnumerable<FraudStatsReadModel>> GetFraudStatsAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
@@ -68,7 +67,7 @@ public class TransactionReportRepository : ITransactionReportRepository
         _logger = logger;
     }
 
-    public async Task<TransactionStatsReadDto> GetStatsAsync(
+    public async Task<TransactionStatsReadModel> GetStatsAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
@@ -80,14 +79,14 @@ public class TransactionReportRepository : ITransactionReportRepository
 
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        var stats = await connection.QuerySingleAsync<TransactionStatsReadDto>(
+        var stats = await connection.QuerySingleAsync<TransactionStatsReadModel>(
             ReportQueries.GetTransactionStats,
             new { StartDate = startDate, EndDate = endDate, MerchantId = merchantId });
 
         return stats;
     }
 
-    public async Task<IEnumerable<TransactionTypeStatsReadDto>> GetStatsByTransactionTypeAsync(
+    public async Task<IEnumerable<TransactionTypeStatsReadModel>> GetStatsByTransactionTypeAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
@@ -95,12 +94,12 @@ public class TransactionReportRepository : ITransactionReportRepository
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QueryAsync<TransactionTypeStatsReadDto>(
+        return await connection.QueryAsync<TransactionTypeStatsReadModel>(
             ReportQueries.GetStatsByTransactionType,
             new { StartDate = startDate, EndDate = endDate, MerchantId = merchantId });
     }
 
-    public async Task<IEnumerable<DailyTrendReadDto>> GetDailyTrendAsync(
+    public async Task<IEnumerable<DailyTrendReadModel>> GetDailyTrendAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
@@ -108,12 +107,12 @@ public class TransactionReportRepository : ITransactionReportRepository
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QueryAsync<DailyTrendReadDto>(
+        return await connection.QueryAsync<DailyTrendReadModel>(
             ReportQueries.GetDailyTrend,
             new { StartDate = startDate, EndDate = endDate, MerchantId = merchantId });
     }
 
-    public async Task<IEnumerable<HourlyDistributionReadDto>> GetHourlyDistributionAsync(
+    public async Task<IEnumerable<HourlyDistributionReadModel>> GetHourlyDistributionAsync(
         DateTime date,
         Guid? merchantId = null,
         CancellationToken cancellationToken = default)
@@ -123,12 +122,12 @@ public class TransactionReportRepository : ITransactionReportRepository
 
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QueryAsync<HourlyDistributionReadDto>(
+        return await connection.QueryAsync<HourlyDistributionReadModel>(
             ReportQueries.GetHourlyDistribution,
             new { StartOfDay = startOfDay, EndOfDay = endOfDay, MerchantId = merchantId });
     }
 
-    public async Task<IEnumerable<TopMerchantReadDto>> GetTopMerchantsAsync(
+    public async Task<IEnumerable<TopMerchantReadModel>> GetTopMerchantsAsync(
         DateTime startDate,
         DateTime endDate,
         int limit = 10,
@@ -136,12 +135,12 @@ public class TransactionReportRepository : ITransactionReportRepository
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QueryAsync<TopMerchantReadDto>(
+        return await connection.QueryAsync<TopMerchantReadModel>(
             ReportQueries.GetTopMerchants,
             new { StartDate = startDate, EndDate = endDate, Limit = limit });
     }
 
-    public async Task<IEnumerable<DeclineReasonStatsReadDto>> GetDeclineReasonStatsAsync(
+    public async Task<IEnumerable<DeclineReasonStatsReadModel>> GetDeclineReasonStatsAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
@@ -149,12 +148,12 @@ public class TransactionReportRepository : ITransactionReportRepository
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QueryAsync<DeclineReasonStatsReadDto>(
+        return await connection.QueryAsync<DeclineReasonStatsReadModel>(
             ReportQueries.GetDeclineReasonStats,
             new { StartDate = startDate, EndDate = endDate, MerchantId = merchantId });
     }
 
-    public async Task<IEnumerable<SettlementBatchReadDto>> GetSettlementBatchSummaryAsync(
+    public async Task<IEnumerable<SettlementBatchReadModel>> GetSettlementBatchSummaryAsync(
         string? batchNumber = null,
         DateTime? startDate = null,
         DateTime? endDate = null,
@@ -162,12 +161,12 @@ public class TransactionReportRepository : ITransactionReportRepository
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QueryAsync<SettlementBatchReadDto>(
+        return await connection.QueryAsync<SettlementBatchReadModel>(
             ReportQueries.GetSettlementBatchSummary,
             new { BatchNumber = batchNumber, StartDate = startDate, EndDate = endDate });
     }
 
-    public async Task<IEnumerable<FraudStatsReadDto>> GetFraudStatsAsync(
+    public async Task<IEnumerable<FraudStatsReadModel>> GetFraudStatsAsync(
         DateTime startDate,
         DateTime endDate,
         Guid? merchantId = null,
@@ -175,7 +174,7 @@ public class TransactionReportRepository : ITransactionReportRepository
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QueryAsync<FraudStatsReadDto>(
+        return await connection.QueryAsync<FraudStatsReadModel>(
             ReportQueries.GetFraudStats,
             new { StartDate = startDate, EndDate = endDate, MerchantId = merchantId });
     }

@@ -10,18 +10,18 @@ namespace Transaction.Infrastructure.Dapper;
 /// </summary>
 public interface ITransactionReadRepository
 {
-    Task<TransactionReadDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<TransactionReadDto?> GetByReferenceNumberAsync(string referenceNumber, CancellationToken cancellationToken = default);
+    Task<TransactionReadModel?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<TransactionReadModel?> GetByReferenceNumberAsync(string referenceNumber, CancellationToken cancellationToken = default);
 
-    Task<PagedResponse<TransactionReadDto>> GetPagedAsync(
+    Task<PagedResponse<TransactionReadModel>> GetPagedAsync(
         TransactionQueryFilter filter,
         CancellationToken cancellationToken = default);
 
     Task<decimal> GetDailyTotalByCardAsync(string cardNumberMasked, DateTime date, CancellationToken cancellationToken = default);
     Task<decimal> GetMonthlyTotalByCardAsync(string cardNumberMasked, int year, int month, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<TransactionReadDto>> GetPendingSettlementAsync(CancellationToken cancellationToken = default);
-    Task<IEnumerable<TransactionReadDto>> GetRecentByMerchantAsync(Guid merchantId, int limit = 100, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TransactionReadModel>> GetPendingSettlementAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<TransactionReadModel>> GetRecentByMerchantAsync(Guid merchantId, int limit = 100, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -53,25 +53,25 @@ public class TransactionReadRepository : ITransactionReadRepository
         _logger = logger;
     }
 
-    public async Task<TransactionReadDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<TransactionReadModel?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QuerySingleOrDefaultAsync<TransactionReadDto>(
+        return await connection.QuerySingleOrDefaultAsync<TransactionReadModel>(
             TransactionQueries.GetById,
             new { Id = id });
     }
 
-    public async Task<TransactionReadDto?> GetByReferenceNumberAsync(string referenceNumber, CancellationToken cancellationToken = default)
+    public async Task<TransactionReadModel?> GetByReferenceNumberAsync(string referenceNumber, CancellationToken cancellationToken = default)
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QuerySingleOrDefaultAsync<TransactionReadDto>(
+        return await connection.QuerySingleOrDefaultAsync<TransactionReadModel>(
             TransactionQueries.GetByReferenceNumber,
             new { ReferenceNumber = referenceNumber });
     }
 
-    public async Task<PagedResponse<TransactionReadDto>> GetPagedAsync(
+    public async Task<PagedResponse<TransactionReadModel>> GetPagedAsync(
         TransactionQueryFilter filter,
         CancellationToken cancellationToken = default)
     {
@@ -100,11 +100,11 @@ public class TransactionReadRepository : ITransactionReadRepository
             parameters);
 
         var totalCount = await multi.ReadSingleAsync<int>();
-        var items = (await multi.ReadAsync<TransactionReadDto>()).ToList();
+        var items = (await multi.ReadAsync<TransactionReadModel>()).ToList();
 
         _logger.LogDebug("Retrieved {Count} items out of {Total}", items.Count, totalCount);
 
-        return PagedResponse<TransactionReadDto>.Create(
+        return PagedResponse<TransactionReadModel>.Create(
             items,
             totalCount,
             filter.PageNumber,
@@ -149,19 +149,19 @@ public class TransactionReadRepository : ITransactionReadRepository
         return result;
     }
 
-    public async Task<IEnumerable<TransactionReadDto>> GetPendingSettlementAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TransactionReadModel>> GetPendingSettlementAsync(CancellationToken cancellationToken = default)
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QueryAsync<TransactionReadDto>(
+        return await connection.QueryAsync<TransactionReadModel>(
             TransactionQueries.GetPendingSettlement);
     }
 
-    public async Task<IEnumerable<TransactionReadDto>> GetRecentByMerchantAsync(Guid merchantId, int limit = 100, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TransactionReadModel>> GetRecentByMerchantAsync(Guid merchantId, int limit = 100, CancellationToken cancellationToken = default)
     {
         using var connection = await _context.CreateConnectionAsync(cancellationToken);
 
-        return await connection.QueryAsync<TransactionReadDto>(
+        return await connection.QueryAsync<TransactionReadModel>(
             TransactionQueries.GetRecentByMerchant,
             new { MerchantId = merchantId, Limit = limit });
     }
