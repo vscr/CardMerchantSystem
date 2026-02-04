@@ -3,27 +3,30 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace CardMerchantSystem.API.Configuration;
 
+/// <summary>
+/// Production-grade Rate Limiting Configuration
+/// Türk bankacılık sektörü standartlarına uygun
+/// </summary>
 public static class RateLimitingConfiguration
 {
     public static IServiceCollection AddRateLimitingServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Check if rate limiting is enabled
         var isEnabled = configuration.GetValue<bool>("RateLimiting:Enabled", true);
 
         if (!isEnabled)
         {
-            // Rate limiting disabled - add dummy/no-op limiter
+            // Rate limiting tamamen kapalı (load test modu)
             services.AddRateLimiter(options =>
             {
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                     RateLimitPartition.GetNoLimiter("disabled"));
 
-                // Add no-op policies so [EnableRateLimiting] attributes don't fail
                 options.AddPolicy("Strict", context => RateLimitPartition.GetNoLimiter("disabled"));
                 options.AddPolicy("Standard", context => RateLimitPartition.GetNoLimiter("disabled"));
                 options.AddPolicy("Relaxed", context => RateLimitPartition.GetNoLimiter("disabled"));
-                options.AddPolicy("PerUser", context => RateLimitPartition.GetNoLimiter("disabled"));
+                options.AddPolicy("Auth", context => RateLimitPartition.GetNoLimiter("disabled"));
                 options.AddPolicy("Transaction", context => RateLimitPartition.GetNoLimiter("disabled"));
+                options.AddPolicy("Report", context => RateLimitPartition.GetNoLimiter("disabled"));
             });
 
             return services;
@@ -31,86 +34,149 @@ public static class RateLimitingConfiguration
 
         services.AddRateLimiter(options =>
         {
-            // Global limiter - Tüm API için
+            // ══════════════════════════════════════════════════════════════
+            // GLOBAL LIMITER - DDoS koruması (IP bazlı)
+            // Gerçek sistemlerde bu genelde API Gateway'de yapılır
+            // ══════════════════════════════════════════════════════════════
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
-                // IP bazlı partition
+                var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                return RateLimitPartition.GetTokenBucketLimiter(clientIp, _ => new TokenBucketRateLimiterOptions
+                {
+                    TokenLimit = 5000,              // IP başına 5000 token
+                    ReplenishmentPeriod = TimeSpan.FromSeconds(1),
+                    TokensPerPeriod = 5000,         // Saniyede 5000 token yenilenir
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 100
+                });
+            });
+
+            // ══════════════════════════════════════════════════════════════
+            // AUTH POLICY - Brute force koruması
+            // Login/Register için SIKI limit (gerçekçi)
+            // ══════════════════════════════════════════════════════════════
+            options.AddPolicy("Auth", context =>
+            {
+                var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                return RateLimitPartition.GetSlidingWindowLimiter(clientIp, _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,               // 10 deneme
+                    Window = TimeSpan.FromMinutes(5), // 5 dakikada
+                    SegmentsPerWindow = 5,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0                  // Kuyruk yok, direkt reddet
+                });
+            });
+
+            // Backward compatibility için "Strict" = "Auth"
+            options.AddPolicy("Strict", context =>
+            {
+                var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                return RateLimitPartition.GetSlidingWindowLimiter(clientIp, _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(5),
+                    SegmentsPerWindow = 5,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+            });
+
+            // ══════════════════════════════════════════════════════════════
+            // TRANSACTION POLICY - Yüksek throughput
+            // Gerçek bankacılık: Transaction'a LIMIT KONMAZ
+            // Ama merchant bazlı soft limit olabilir
+            // ══════════════════════════════════════════════════════════════
+            options.AddPolicy("Transaction", context =>
+            {
+                // Merchant bazlı limit (header veya claim'den al)
+                var merchantId = context.Request.Headers["X-Merchant-Id"].FirstOrDefault()
+                    ?? context.User?.FindFirst("merchant_id")?.Value
+                    ?? "default";
+
+                return RateLimitPartition.GetTokenBucketLimiter(merchantId, _ => new TokenBucketRateLimiterOptions
+                {
+                    TokenLimit = 1000,              // Merchant başına 1000 TPS
+                    ReplenishmentPeriod = TimeSpan.FromSeconds(1),
+                    TokensPerPeriod = 1000,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 50                 // 50 istek kuyruğa alınabilir
+                });
+            });
+
+            // ══════════════════════════════════════════════════════════════
+            // STANDARD POLICY - Normal CRUD işlemleri
+            // Merchant, Terminal, Card yönetimi vs.
+            // ══════════════════════════════════════════════════════════════
+            options.AddPolicy("Standard", context =>
+            {
+                var username = context.User?.Identity?.Name ?? "anonymous";
+
+                return RateLimitPartition.GetFixedWindowLimiter(username, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 300,              // Kullanıcı başına 300/dakika
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 10
+                });
+            });
+
+            // ══════════════════════════════════════════════════════════════
+            // RELAXED POLICY - Read-heavy endpoint'ler
+            // Liste, arama, dashboard vs.
+            // ══════════════════════════════════════════════════════════════
+            options.AddPolicy("Relaxed", context =>
+            {
                 var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
                 return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = configuration.GetValue<int>("RateLimiting:Global:PermitLimit", 100),
-                    Window = TimeSpan.FromMinutes(configuration.GetValue<int>("RateLimiting:Global:WindowMinutes", 1)),
+                    PermitLimit = 1000,             // IP başına 1000/dakika
+                    Window = TimeSpan.FromMinutes(1),
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 10
+                    QueueLimit = 20
                 });
             });
 
-            // Policy: Strict - Login, Register gibi hassas endpoint'ler
-            options.AddFixedWindowLimiter("Strict", opt =>
-            {
-                opt.PermitLimit = configuration.GetValue<int>("RateLimiting:Strict:PermitLimit", 5);
-                opt.Window = TimeSpan.FromMinutes(configuration.GetValue<int>("RateLimiting:Strict:WindowMinutes", 1));
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 0;
-            });
-
-            // Policy: Standard - Normal CRUD işlemleri
-            options.AddFixedWindowLimiter("Standard", opt =>
-            {
-                opt.PermitLimit = configuration.GetValue<int>("RateLimiting:Standard:PermitLimit", 60);
-                opt.Window = TimeSpan.FromMinutes(configuration.GetValue<int>("RateLimiting:Standard:WindowMinutes", 1));
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 5;
-            });
-
-            // Policy: Relaxed - Okuma ağırlıklı endpoint'ler
-            options.AddFixedWindowLimiter("Relaxed", opt =>
-            {
-                opt.PermitLimit = 200;
-                opt.Window = TimeSpan.FromMinutes(1);
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 10;
-            });
-
-            // Policy: PerUser - Kullanıcı bazlı limit
-            options.AddPolicy("PerUser", context =>
+            // ══════════════════════════════════════════════════════════════
+            // REPORT POLICY - Ağır raporlar
+            // CPU/DB yoğun sorgular için düşük limit
+            // ══════════════════════════════════════════════════════════════
+            options.AddPolicy("Report", context =>
             {
                 var username = context.User?.Identity?.Name ?? "anonymous";
 
-                return RateLimitPartition.GetTokenBucketLimiter(username, _ => new TokenBucketRateLimiterOptions
+                return RateLimitPartition.GetFixedWindowLimiter(username, _ => new FixedWindowRateLimiterOptions
                 {
-                    TokenLimit = 100,
-                    ReplenishmentPeriod = TimeSpan.FromMinutes(1),
-                    TokensPerPeriod = 100,
+                    PermitLimit = 20,               // Kullanıcı başına 20/dakika
+                    Window = TimeSpan.FromMinutes(1),
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 10
+                    QueueLimit = 2
                 });
             });
 
-            // Policy: Transaction - İşlem endpoint'leri için özel
-            options.AddSlidingWindowLimiter("Transaction", opt =>
-            {
-                opt.PermitLimit = 30;
-                opt.Window = TimeSpan.FromMinutes(1);
-                opt.SegmentsPerWindow = 6; // 10 saniyelik segmentler
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 5;
-            });
-
-            // Rejected response
+            // ══════════════════════════════════════════════════════════════
+            // REJECTED RESPONSE
+            // ══════════════════════════════════════════════════════════════
             options.OnRejected = async (context, cancellationToken) =>
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 context.HttpContext.Response.ContentType = "application/json";
 
+                var retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retry)
+                    ? (int)retry.TotalSeconds
+                    : 60;
+
+                context.HttpContext.Response.Headers.RetryAfter = retryAfter.ToString();
+
                 var response = new
                 {
                     code = "RATE_LIMIT_EXCEEDED",
-                    message = "Çok fazla istek gönderdiniz. Lütfen bekleyin.",
-                    retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter)
-                        ? retryAfter.TotalSeconds
-                        : 60
+                    message = "İstek limiti aşıldı. Lütfen bekleyin.",
+                    retryAfterSeconds = retryAfter,
+                    timestamp = DateTime.UtcNow
                 };
 
                 await context.HttpContext.Response.WriteAsJsonAsync(response, cancellationToken);

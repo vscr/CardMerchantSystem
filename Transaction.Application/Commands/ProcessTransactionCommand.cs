@@ -155,6 +155,7 @@ public class ProcessTransactionCommandHandler
     {
         return new TransactionResultDto
         {
+            Id = transaction.Id,
             IsApproved = transaction.Status == TransactionStatus.Approved,
             ReferenceNumber = transaction.ReferenceNumber.Value,
             AuthorizationCode = transaction.AuthorizationCode?.Value,

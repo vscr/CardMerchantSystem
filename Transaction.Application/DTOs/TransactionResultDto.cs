@@ -5,6 +5,7 @@
 /// </summary>
 public class TransactionResultDto
 {
+    public Guid Id { get; set; }
     public bool IsApproved { get; set; }
     public string ReferenceNumber { get; set; } = null!;
     public string? AuthorizationCode { get; set; }

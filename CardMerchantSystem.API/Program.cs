@@ -66,9 +66,19 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
+
+
+
     Log.Information("Starting CardMerchantSystem API...");
 
     var builder = WebApplication.CreateBuilder(args);
+
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.Limits.MaxConcurrentConnections = 1000;
+        options.Limits.MaxConcurrentUpgradedConnections = 1000;
+        options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
+    });
 
     // ══════════════════════════════════════════════════════════════
     // DATABASE CONFIGURATION
