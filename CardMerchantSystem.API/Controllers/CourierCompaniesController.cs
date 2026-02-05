@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class CourierCompaniesController : ControllerBase
+public class CourierCompaniesController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -43,10 +41,7 @@ public class CourierCompaniesController : ControllerBase
         var query = new GetCourierCompanyByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Kurye firması bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Kurye firması", id);
     }
 
     /// <summary>
@@ -60,9 +55,6 @@ public class CourierCompaniesController : ControllerBase
         var command = new CreateCourierCompanyCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 }

@@ -7,10 +7,8 @@ using RegulatoryReporting.Application.Queries;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class GeneratedReportsController : ControllerBase
+public class GeneratedReportsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -56,10 +54,7 @@ public class GeneratedReportsController : ControllerBase
         var query = new GetGeneratedReportByIdQuery(id, includeSubmissions);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Rapor bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Rapor", id);
     }
 
     /// <summary>
@@ -74,10 +69,7 @@ public class GeneratedReportsController : ControllerBase
         var command = new GenerateReportCommand(dto, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -92,10 +84,7 @@ public class GeneratedReportsController : ControllerBase
         var command = new ValidateReportCommand(id, validatedBy);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -112,9 +101,6 @@ public class GeneratedReportsController : ControllerBase
         var command = new SubmitReportCommand(dto, submittedBy);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }

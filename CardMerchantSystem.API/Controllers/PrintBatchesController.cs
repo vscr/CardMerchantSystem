@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class PrintBatchesController : ControllerBase
+public class PrintBatchesController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -55,10 +53,7 @@ public class PrintBatchesController : ControllerBase
         var query = new GetPrintBatchByIdQuery(id, includeItems);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Batch bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Batch", id);
     }
 
     /// <summary>
@@ -72,10 +67,7 @@ public class PrintBatchesController : ControllerBase
         var command = new CreatePrintBatchCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -90,10 +82,7 @@ public class PrintBatchesController : ControllerBase
         var command = new AddItemsToPrintBatchCommand(id, items);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -108,10 +97,7 @@ public class PrintBatchesController : ControllerBase
         var command = new GeneratePrintFileCommand(id, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -126,10 +112,7 @@ public class PrintBatchesController : ControllerBase
         var command = new SendBatchToVendorCommand(id, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -144,10 +127,7 @@ public class PrintBatchesController : ControllerBase
         var command = new StartBatchProductionCommand(id, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -162,9 +142,6 @@ public class PrintBatchesController : ControllerBase
         var command = new CompletePrintBatchCommand(id, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }

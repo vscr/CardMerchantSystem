@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class HSMController : ControllerBase
+public class HSMController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -32,10 +30,7 @@ public class HSMController : ControllerBase
         var command = new CreateHSMDeviceCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetDeviceById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetDeviceById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -49,10 +44,7 @@ public class HSMController : ControllerBase
         var query = new GetHSMDeviceByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -83,10 +75,7 @@ public class HSMController : ControllerBase
         var command = new GenerateKeyCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetAllKeys), result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -117,10 +106,7 @@ public class HSMController : ControllerBase
         var command = new GeneratePINBlockCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     #endregion
@@ -138,10 +124,7 @@ public class HSMController : ControllerBase
         var command = new VerifyCVVCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     #endregion
@@ -158,10 +141,7 @@ public class HSMController : ControllerBase
         var command = new HealthCheckCommand();
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     #endregion

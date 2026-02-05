@@ -8,10 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class MerchantsController : ControllerBase
+public class MerchantsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -44,10 +42,7 @@ public class MerchantsController : ControllerBase
         var command = new CreateMerchantCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -61,10 +56,7 @@ public class MerchantsController : ControllerBase
         var query = new GetMerchantByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -78,10 +70,7 @@ public class MerchantsController : ControllerBase
         var query = new GetMerchantWithTerminalsQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -110,10 +99,7 @@ public class MerchantsController : ControllerBase
         var command = new ApproveMerchantCommand(id, approverUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "Üye işyeri onaylandı" });
+        return ToActionResult(result, "Üye işyeri onaylandı");
     }
 
     /// <summary>
@@ -128,10 +114,7 @@ public class MerchantsController : ControllerBase
         var command = new ActivateMerchantCommand(id, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "Üye işyeri aktif edildi" });
+        return ToActionResult(result, "Üye işyeri aktif edildi");
     }
 
     /// <summary>
@@ -146,10 +129,7 @@ public class MerchantsController : ControllerBase
         var command = new AddTerminalCommand(id, dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -165,9 +145,6 @@ public class MerchantsController : ControllerBase
         var command = new ActivateTerminalCommand(merchantId, terminalId, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "Terminal aktif edildi" });
+        return ToActionResult(result, "Terminal aktif edildi");
     }
 }

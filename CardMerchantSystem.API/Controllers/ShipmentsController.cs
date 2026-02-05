@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class ShipmentsController : ControllerBase
+public class ShipmentsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -65,10 +63,7 @@ public class ShipmentsController : ControllerBase
         var query = new GetShipmentByTrackingNumberQuery(trackingNumber);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Gönderi bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Gönderi", trackingNumber);
     }
 
     /// <summary>
@@ -83,10 +78,7 @@ public class ShipmentsController : ControllerBase
         var query = new GetShipmentByIdQuery(id, includeDetails);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Gönderi bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Gönderi", id);
     }
 
     /// <summary>
@@ -100,10 +92,7 @@ public class ShipmentsController : ControllerBase
         var command = new CreateShipmentCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -118,10 +107,7 @@ public class ShipmentsController : ControllerBase
         var command = new PickUpShipmentCommand(id, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -138,10 +124,7 @@ public class ShipmentsController : ControllerBase
         var command = new UpdateShipmentStatusCommand(id, statusAction, location, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -157,10 +140,7 @@ public class ShipmentsController : ControllerBase
         var command = new DeliverShipmentCommand(id, dto, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -176,10 +156,7 @@ public class ShipmentsController : ControllerBase
         var command = new FailDeliveryCommand(id, dto, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -195,9 +172,6 @@ public class ShipmentsController : ControllerBase
         var command = new RetryDeliveryCommand(id, newAddress, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }

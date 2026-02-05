@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class FeeController : ControllerBase
+public class FeeController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -32,10 +30,7 @@ public class FeeController : ControllerBase
         var command = new CreateTariffCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetTariffById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetTariffById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -49,10 +44,7 @@ public class FeeController : ControllerBase
         var command = new AddTariffRuleCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -66,10 +58,7 @@ public class FeeController : ControllerBase
         var command = new ActivateTariffCommand(id);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -83,10 +72,7 @@ public class FeeController : ControllerBase
         var query = new GetTariffByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -117,10 +103,7 @@ public class FeeController : ControllerBase
         var command = new AssignMerchantTariffCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetMerchantTariffs), new { merchantId = dto.MerchantId }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetMerchantTariffs), _ => new { merchantId = dto.MerchantId });
     }
 
     /// <summary>
@@ -152,10 +135,7 @@ public class FeeController : ControllerBase
         var command = new CalculateCommissionCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -171,10 +151,7 @@ public class FeeController : ControllerBase
         var query = new GetMerchantCommissionSummaryQuery(merchantId, startDate, endDate);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     #endregion
@@ -192,10 +169,7 @@ public class FeeController : ControllerBase
         var command = new CreateMembershipFeeCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetAllMembershipFees), result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -226,10 +200,7 @@ public class FeeController : ControllerBase
         var command = new CreateFeeAccrualCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetMerchantAccruals), new { merchantId = dto.MerchantId }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetMerchantAccruals), _ => new { merchantId = dto.MerchantId });
     }
 
     /// <summary>
@@ -243,10 +214,7 @@ public class FeeController : ControllerBase
         var command = new RecordPaymentCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>

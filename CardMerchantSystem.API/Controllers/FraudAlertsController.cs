@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class FraudAlertsController : ControllerBase
+public class FraudAlertsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -42,10 +40,7 @@ public class FraudAlertsController : ControllerBase
         var query = new GetFraudAlertByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Fraud uyarısı bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Fraud uyarısı", id);
     }
 
     /// <summary>
@@ -59,9 +54,6 @@ public class FraudAlertsController : ControllerBase
         var command = new CreateFraudAlertCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 }

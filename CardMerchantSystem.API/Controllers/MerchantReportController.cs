@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class MerchantReportController : ControllerBase
+public class MerchantReportController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -32,10 +30,7 @@ public class MerchantReportController : ControllerBase
         var command = new CreateMerchantReportConfigCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetConfigsByMerchant), new { merchantId = dto.MerchantId }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetConfigsByMerchant), x => new { merchantId = dto.MerchantId });
     }
 
     /// <summary>
@@ -49,10 +44,7 @@ public class MerchantReportController : ControllerBase
         var command = new SetEmailDeliveryCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -66,10 +58,7 @@ public class MerchantReportController : ControllerBase
         var command = new SetFtpDeliveryCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -101,10 +90,7 @@ public class MerchantReportController : ControllerBase
         var command = new CreateReportRequestCommand(dto, User.Identity?.Name);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetRequestById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetRequestById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -118,10 +104,7 @@ public class MerchantReportController : ControllerBase
         var command = new GenerateReportCommand(id);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -135,10 +118,7 @@ public class MerchantReportController : ControllerBase
         var command = new DeliverReportCommand(id);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -153,7 +133,7 @@ public class MerchantReportController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
 
         if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
+            return NotFound(new ApiErrorResponse(result.Error!, result.ErrorCode));
 
         return Ok(result.Value);
     }
@@ -184,17 +164,17 @@ public class MerchantReportController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
 
         if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
+            return NotFound(new ApiErrorResponse(result.Error!, result.ErrorCode));
 
         var request = result.Value!;
 
         if (string.IsNullOrEmpty(request.FileName))
-            return BadRequest(new { error = "Rapor henüz oluşturulmamış" });
+            return BadRequest(new ApiErrorResponse("Rapor henüz oluşturulmamış", "REPORT_NOT_GENERATED"));
 
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "MerchantReports", request.FileName);
 
         if (!System.IO.File.Exists(filePath))
-            return NotFound(new { error = "Rapor dosyası bulunamadı" });
+            return NotFound(new ApiErrorResponse("Rapor dosyası bulunamadı", "FILE_NOT_FOUND"));
 
         var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath, cancellationToken);
         var contentType = request.ReportFormat switch
@@ -224,7 +204,7 @@ public class MerchantReportController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
 
         if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
+            return NotFound(new ApiErrorResponse(result.Error!, result.ErrorCode));
 
         return Ok(result.Value);
     }

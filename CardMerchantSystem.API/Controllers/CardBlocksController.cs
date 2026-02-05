@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class CardBlocksController : ControllerBase
+public class CardBlocksController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -56,10 +54,7 @@ public class CardBlocksController : ControllerBase
         var query = new GetCardBlockByIdQuery(id, includeVerifications);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Blok bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Blok", id);
     }
 
     /// <summary>
@@ -73,10 +68,7 @@ public class CardBlocksController : ControllerBase
         var command = new CreateCardBlockCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -92,10 +84,7 @@ public class CardBlocksController : ControllerBase
         var command = new InitiateVerificationCommand(id, dto, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -110,10 +99,7 @@ public class CardBlocksController : ControllerBase
         var command = new VerifyOtpCommand(id, dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -129,10 +115,7 @@ public class CardBlocksController : ControllerBase
         var command = new ResolveBlockCommand(id, resolvedBy, resolutionNotes);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -148,9 +131,6 @@ public class CardBlocksController : ControllerBase
         var command = new EscalateBlockCommand(id, reason, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }

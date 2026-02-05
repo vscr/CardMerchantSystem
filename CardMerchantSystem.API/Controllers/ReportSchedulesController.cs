@@ -6,10 +6,8 @@ using RegulatoryReporting.Application.DTOs;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class ReportSchedulesController : ControllerBase
+public class ReportSchedulesController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -29,9 +27,6 @@ public class ReportSchedulesController : ControllerBase
         var command = new CreateReportScheduleCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }

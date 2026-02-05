@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class BKMController : ControllerBase
+public class BKMController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -30,10 +28,7 @@ public class BKMController : ControllerBase
         var command = new ProcessAuthorizationCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -47,10 +42,7 @@ public class BKMController : ControllerBase
         var query = new GetSwitchMessageByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -79,10 +71,7 @@ public class BKMController : ControllerBase
         var command = new CreateBINCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetBINInfo), new { bin = result.Value!.BIN }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetBINInfo), x => new { bin = x.BIN });
     }
 
     /// <summary>
@@ -96,10 +85,7 @@ public class BKMController : ControllerBase
         var query = new GetBINInfoQuery(bin);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -127,9 +113,6 @@ public class BKMController : ControllerBase
         var command = new ProcessSettlementCommand(date);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }

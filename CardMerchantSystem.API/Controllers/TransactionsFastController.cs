@@ -11,10 +11,9 @@ namespace CardMerchantSystem.API.Controllers;
 /// Dapper tabanlı yüksek performanslı Transaction endpoint'leri
 /// EF Core yerine raw SQL kullanarak 5-15x daha hızlı sonuç döner
 /// </summary>
-[ApiController]
 [Route("api/transactions/fast")]
 [Authorize]
-public class TransactionsFastController : ControllerBase
+public class TransactionsFastController : ApiControllerBase
 {
     private readonly ITransactionReadRepository _readRepository;
     private readonly ITransactionReportRepository _reportRepository;
@@ -42,7 +41,6 @@ public class TransactionsFastController : ControllerBase
 
         try
         {
-            // Basit bir count sorgusu - WITH NOLOCK sayesinde lock beklemez
             var filter = new TransactionQueryFilter { PageNumber = 1, PageSize = 1 };
             var result = await _readRepository.GetPagedAsync(filter, cancellationToken);
 
@@ -134,7 +132,7 @@ public class TransactionsFastController : ControllerBase
         Response.Headers.Append("X-Query-Time-Ms", sw.ElapsedMilliseconds.ToString());
 
         if (result == null)
-            return NotFound(new { error = "İşlem bulunamadı", id });
+            return NotFound(new ApiErrorResponse("İşlem bulunamadı", "NOT_FOUND"));
 
         return Ok(MapToDto(result));
     }
@@ -153,7 +151,7 @@ public class TransactionsFastController : ControllerBase
         Response.Headers.Append("X-Query-Time-Ms", sw.ElapsedMilliseconds.ToString());
 
         if (result == null)
-            return NotFound(new { error = "İşlem bulunamadı", referenceNumber });
+            return NotFound(new ApiErrorResponse("İşlem bulunamadı", "NOT_FOUND"));
 
         return Ok(MapToDto(result));
     }

@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class AccountingController : ControllerBase
+public class AccountingController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -32,10 +30,7 @@ public class AccountingController : ControllerBase
         var command = new CreateChartOfAccountCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetAccounts), result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -66,10 +61,7 @@ public class AccountingController : ControllerBase
         var command = new CreateAccountingPeriodCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetPeriods), result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -94,13 +86,10 @@ public class AccountingController : ControllerBase
         string periodCode,
         CancellationToken cancellationToken)
     {
-        var command = new ClosePeriodCommand(periodCode, User.Identity?.Name ?? "System");
+        var command = new ClosePeriodCommand(periodCode, CurrentUsername ?? "System");
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     #endregion
@@ -118,10 +107,7 @@ public class AccountingController : ControllerBase
         var command = new CreateJournalEntryCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetJournalEntryById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetJournalEntryById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -132,13 +118,10 @@ public class AccountingController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var command = new PostJournalEntryCommand(id, User.Identity?.Name ?? "System");
+        var command = new PostJournalEntryCommand(id, CurrentUsername ?? "System");
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -149,13 +132,10 @@ public class AccountingController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var command = new ReverseJournalEntryCommand(id, User.Identity?.Name ?? "System");
+        var command = new ReverseJournalEntryCommand(id, CurrentUsername ?? "System");
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -169,10 +149,7 @@ public class AccountingController : ControllerBase
         var query = new GetJournalEntryByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -204,10 +181,7 @@ public class AccountingController : ControllerBase
         var query = new GetTrialBalanceQuery(periodCode);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     #endregion

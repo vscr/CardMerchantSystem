@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class SettlementBatchesController : ControllerBase
+public class SettlementBatchesController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -55,10 +53,7 @@ public class SettlementBatchesController : ControllerBase
         var query = new GetSettlementBatchByIdQuery(id, includeDetails);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Batch bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Batch", id);
     }
 
     /// <summary>
@@ -72,10 +67,7 @@ public class SettlementBatchesController : ControllerBase
         var command = new CreateMerchantSettlementBatchCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -90,10 +82,7 @@ public class SettlementBatchesController : ControllerBase
         var command = new AddMerchantSettlementDetailsCommand(id, details);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -108,9 +97,6 @@ public class SettlementBatchesController : ControllerBase
         var command = new ProcessMerchantSettlementBatchCommand(id, processedBy);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }

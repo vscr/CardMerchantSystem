@@ -7,10 +7,8 @@ using RegulatoryReporting.Application.Queries;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class ReportDefinitionsController : ControllerBase
+public class ReportDefinitionsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -43,10 +41,7 @@ public class ReportDefinitionsController : ControllerBase
         var query = new GetReportDefinitionByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Rapor tanımı bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Rapor tanımı", id);
     }
 
     /// <summary>
@@ -73,9 +68,6 @@ public class ReportDefinitionsController : ControllerBase
         var command = new CreateReportDefinitionCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 }

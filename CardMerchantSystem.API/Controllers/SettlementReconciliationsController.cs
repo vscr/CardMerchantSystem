@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class SettlementReconciliationsController : ControllerBase
+public class SettlementReconciliationsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -42,10 +40,7 @@ public class SettlementReconciliationsController : ControllerBase
         var query = new GetReconciliationByIdQuery(id, includeMismatches);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Mutabakat bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Mutabakat", id);
     }
 
     /// <summary>
@@ -59,10 +54,7 @@ public class SettlementReconciliationsController : ControllerBase
         var command = new CreateMerchantReconciliationCommand(batchId);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -79,10 +71,7 @@ public class SettlementReconciliationsController : ControllerBase
         var command = new SetReportedAmountsCommand(dto, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -98,9 +87,6 @@ public class SettlementReconciliationsController : ControllerBase
         var command = new ResolveMerchantReconciliationCommand(id, notes, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }

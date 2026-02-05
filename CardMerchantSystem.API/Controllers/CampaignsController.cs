@@ -8,10 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class CampaignsController : ControllerBase
+public class CampaignsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -44,10 +42,7 @@ public class CampaignsController : ControllerBase
         var command = new CreateCampaignCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -61,10 +56,7 @@ public class CampaignsController : ControllerBase
         var query = new GetCampaignByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -78,10 +70,7 @@ public class CampaignsController : ControllerBase
         var query = new GetCampaignDetailQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -109,10 +98,7 @@ public class CampaignsController : ControllerBase
         var command = new ActivateCampaignCommand(id, approverUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "Kampanya aktif edildi" });
+        return ToActionResult(result, "Kampanya aktif edildi");
     }
 
     /// <summary>
@@ -128,10 +114,7 @@ public class CampaignsController : ControllerBase
         var command = new PauseCampaignCommand(id, reason, username);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "Kampanya duraklatıldı" });
+        return ToActionResult(result, "Kampanya duraklatıldı");
     }
 
     /// <summary>
@@ -146,10 +129,7 @@ public class CampaignsController : ControllerBase
         var command = new AddCampaignRuleCommand(id, request.RuleName, request.RuleType, request.Operator, request.Value);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "Kural eklendi" });
+        return ToActionResult(result, "Kural eklendi");
     }
 
     /// <summary>
@@ -163,10 +143,7 @@ public class CampaignsController : ControllerBase
         var command = new ApplyCampaignCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -181,10 +158,7 @@ public class CampaignsController : ControllerBase
         var query = new CalculateDiscountQuery(campaignCode, transactionAmount);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }
 

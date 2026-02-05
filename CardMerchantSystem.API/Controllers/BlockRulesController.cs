@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class BlockRulesController : ControllerBase
+public class BlockRulesController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -43,10 +41,7 @@ public class BlockRulesController : ControllerBase
         var query = new GetBlockRuleByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Bloke kuralı bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Bloke kuralı", id);
     }
 
     /// <summary>
@@ -60,9 +55,6 @@ public class BlockRulesController : ControllerBase
         var command = new CreateBlockRuleCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 }

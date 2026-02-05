@@ -8,10 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class DisputesController : ControllerBase
+public class DisputesController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -44,10 +42,7 @@ public class DisputesController : ControllerBase
         var command = new CreateDisputeCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -61,10 +56,7 @@ public class DisputesController : ControllerBase
         var query = new GetDisputeByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -78,10 +70,7 @@ public class DisputesController : ControllerBase
         var query = new GetDisputeDetailQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsFailure)
-            return NotFound(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -123,10 +112,7 @@ public class DisputesController : ControllerBase
         var command = new StartReviewCommand(id, assignedTo);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "İtiraz incelemeye alındı" });
+        return ToActionResult(result, "İtiraz incelemeye alındı");
     }
 
     /// <summary>
@@ -147,10 +133,7 @@ public class DisputesController : ControllerBase
 
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "İtiraz çözüldü" });
+        return ToActionResult(result, "İtiraz çözüldü");
     }
 
     /// <summary>
@@ -166,10 +149,7 @@ public class DisputesController : ControllerBase
         var command = new EscalateDisputeCommand(id, escalationReason, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "İtiraz bankaya yönlendirildi" });
+        return ToActionResult(result, "İtiraz bankaya yönlendirildi");
     }
 
     /// <summary>
@@ -184,10 +164,7 @@ public class DisputesController : ControllerBase
         var command = new AddDisputeNoteCommand(id, request.Note, request.Username, request.IsInternal);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error, code = result.ErrorCode });
-
-        return Ok(new { message = "Not eklendi" });
+        return ToActionResult(result, "Not eklendi");
     }
 }
 

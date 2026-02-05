@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardMerchantSystem.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class MerchantPayoutsController : ControllerBase
+public class MerchantPayoutsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -54,10 +52,7 @@ public class MerchantPayoutsController : ControllerBase
         var query = new GetMerchantPayoutByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is null)
-            return NotFound(new { error = "Ödeme bulunamadı" });
-
-        return Ok(result);
+        return OkOrNotFound(result, "Ödeme", id);
     }
 
     /// <summary>
@@ -71,10 +66,7 @@ public class MerchantPayoutsController : ControllerBase
         var command = new CreateMerchantPayoutCommand(dto);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedOrBadRequest(result, nameof(GetById), x => new { id = x.Id });
     }
 
     /// <summary>
@@ -90,10 +82,7 @@ public class MerchantPayoutsController : ControllerBase
         var command = new SchedulePayoutCommand(id, scheduledDate, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -109,9 +98,6 @@ public class MerchantPayoutsController : ControllerBase
         var command = new CompletePayoutCommand(id, bankReferenceNumber, operatorUsername);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }
