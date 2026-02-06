@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using CardMerchantSystem.Shared.Audit.Interceptors;
 using CardMerchantSystem.Shared.Data;
 using CardMerchantSystem.Shared.Data.Extensions;
 using Merchant.Domain.Repositories;
@@ -24,10 +25,17 @@ public static class DependencyInjection
         var connectionString = databaseOptions.GetConnectionString();
         var provider = databaseOptions.Provider;
 
-        // EF Core DbContext
-        services.AddDbContext<MerchantDbContext>(options =>
+        // EF Core DbContext with Audit Interceptor
+        services.AddDbContext<MerchantDbContext>((sp, options) =>
         {
             options.ConfigureDatabase(provider, connectionString);
+
+            // Audit interceptor ekle
+            var auditInterceptor = sp.GetService<AuditSaveChangesInterceptor>();
+            if (auditInterceptor != null)
+            {
+                options.AddInterceptors(auditInterceptor);
+            }
         });
 
         // Base context alias — MerchantRepository bunu inject ediyor

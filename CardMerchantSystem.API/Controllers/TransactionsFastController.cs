@@ -358,15 +358,15 @@ public class TransactionsFastController : ApiControllerBase
     /// [DAPPER] Settlement batch özeti
     /// </summary>
     [HttpGet("stats/settlement-batches")]
-    [ProducesResponseType(typeof(IEnumerable<SettlementBatchDto>), 200)]
-    public async Task<ActionResult<IEnumerable<SettlementBatchDto>>> GetSettlementBatches([FromQuery] string? batchNumber = null, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null, CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(IEnumerable<TransactionSettlementBatchDto>), 200)]
+    public async Task<ActionResult<IEnumerable<TransactionSettlementBatchDto>>> GetSettlementBatches([FromQuery] string? batchNumber = null, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null, CancellationToken cancellationToken = default)
     {
         var sw = Stopwatch.StartNew();
         var result = await _reportRepository.GetSettlementBatchSummaryAsync(batchNumber, startDate, endDate, cancellationToken);
         sw.Stop();
         Response.Headers.Append("X-Query-Time-Ms", sw.ElapsedMilliseconds.ToString());
 
-        return Ok(result.Select(b => new SettlementBatchDto { BatchNumber = b.BatchNumber, TransactionCount = b.TransactionCount, TotalAmount = b.TotalAmount, FirstTransaction = b.FirstTransaction, LastTransaction = b.LastTransaction, SettledAt = b.SettledAt }));
+        return Ok(result.Select(b => new TransactionSettlementBatchDto { BatchNumber = b.BatchNumber, TransactionCount = b.TransactionCount, TotalAmount = b.TotalAmount, FirstTransaction = b.FirstTransaction, LastTransaction = b.LastTransaction, SettledAt = b.SettledAt }));
     }
 
     /// <summary>
@@ -452,7 +452,7 @@ public class DeclineReasonStatsDto
     public decimal Amount { get; set; }
 }
 
-public class SettlementBatchDto
+public class TransactionSettlementBatchDto
 {
     public string BatchNumber { get; set; } = null!;
     public int TransactionCount { get; set; }

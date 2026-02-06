@@ -160,7 +160,7 @@ public class LocalizationController : ApiControllerBase
         if (!result)
             throw new NotFoundException("Çeviri", id);
 
-        return NoContent();
+        return (ActionResult)NoContent();
     }
 
     /// <summary>

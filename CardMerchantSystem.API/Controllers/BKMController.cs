@@ -101,11 +101,9 @@ public class BKMController : ApiControllerBase
         return Ok(result);
     }
 
-    /// <summary>
-    /// Settlement işlemi yapar
-    /// </summary>
+    // Replace the return type of ProcessSettlement method
     [HttpPost("settlement")]
-    public async Task<ActionResult<SettlementBatchDto>> ProcessSettlement(
+    public async Task<ActionResult<BKM.Application.DTOs.SettlementBatchDto>> ProcessSettlement(
         [FromQuery] string? settlementDate,
         CancellationToken cancellationToken)
     {

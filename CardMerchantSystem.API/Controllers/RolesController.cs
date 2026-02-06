@@ -82,6 +82,6 @@ public class RolesController : ApiControllerBase
         if (!result)
             throw new BusinessRuleException("Rol silinemedi. Sistem rolleri veya kullanıcısı olan roller silinemez.");
 
-        return NoContent();
+        return (ActionResult)NoContent();
     }
 }

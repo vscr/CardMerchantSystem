@@ -16,6 +16,7 @@ using CardMerchantSystem.API.Configuration;
 using CardMerchantSystem.API.Jobs;
 using CardMerchantSystem.API.Middleware;
 using CardMerchantSystem.API.Services;
+using CardMerchantSystem.Shared.Audit;
 using CardMerchantSystem.Shared.Data;
 using CardMerchantSystem.Shared.Data.Dapper.Extensions;
 using CardMerchantSystem.Shared.Resilience;
@@ -253,6 +254,9 @@ try
     // MODULE REGISTRATIONS
     // ══════════════════════════════════════════════════════════════
     Log.Information("Registering modules...");
+
+    // Audit Trail (Ortak)
+    builder.Services.AddAuditTrail();
 
     // Card Module
     builder.Services.AddCardApplication();

@@ -103,7 +103,7 @@ public class MenusController : ApiControllerBase
         if (!result)
             throw new BusinessRuleException("Menü silinemedi. Alt menüleri olan menüler silinemez.");
 
-        return NoContent();
+        return (ActionResult)NoContent();
     }
 
     /// <summary>
@@ -128,6 +128,6 @@ public class MenusController : ApiControllerBase
         if (!result)
             throw new NotFoundException("Claim", claimId);
 
-        return NoContent();
+        return (ActionResult)NoContent();
     }
 }

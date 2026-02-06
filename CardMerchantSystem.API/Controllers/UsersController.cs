@@ -120,6 +120,6 @@ public class UsersController : ApiControllerBase
         if (!result)
             throw new BusinessRuleException("Kullanıcı silinemedi. Admin kullanıcısı silinemez.");
 
-        return NoContent();
+        return (ActionResult)NoContent();
     }
 }

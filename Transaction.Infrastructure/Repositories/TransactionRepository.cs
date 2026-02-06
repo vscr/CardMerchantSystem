@@ -58,20 +58,18 @@ public class TransactionRepository : ITransactionRepository
 
     public async Task<IReadOnlyList<TransactionAggregate>> GetByStatusAsync(TransactionStatus status, CancellationToken cancellationToken = default)
     {
-        var statusId = status.Id;
         return await _context.Transactions
             .AsNoTracking()
-            .Where(x => EF.Property<int>(x, "StatusId") == statusId)
+            .Where(x => x.Status == status)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<TransactionAggregate>> GetPendingSettlementAsync(CancellationToken cancellationToken = default)
     {
-        var approvedStatusId = TransactionStatus.Approved.Id;
         return await _context.Transactions
             .AsNoTracking()
-            .Where(x => EF.Property<int>(x, "StatusId") == approvedStatusId)
+            .Where(x => x.Status == TransactionStatus.Approved)
             .OrderBy(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
     }
@@ -126,18 +124,16 @@ public class TransactionRepository : ITransactionRepository
             query = query.Where(x => x.CreatedAt <= endDate.Value);
         }
 
-        // Status filtresi - DB'de int olarak filtreleme (Smart Enum dönüşümü configuration'da var)
+        // Status filtresi - Smart Enum doğrudan karşılaştırma
         if (status != null)
         {
-            var statusId = status.Id;
-            query = query.Where(x => EF.Property<int>(x, "StatusId") == statusId);
+            query = query.Where(x => x.Status == status);
         }
 
-        // Transaction Type filtresi - DB'de int olarak filtreleme
+        // Transaction Type filtresi - Smart Enum doğrudan karşılaştırma
         if (transactionType != null)
         {
-            var typeId = transactionType.Id;
-            query = query.Where(x => EF.Property<int>(x, "TransactionTypeId") == typeId);
+            query = query.Where(x => x.TransactionType == transactionType);
         }
 
         // === COUNT SORGUSU (Ayrı ve optimize) ===
@@ -158,9 +154,6 @@ public class TransactionRepository : ITransactionRepository
             "referencenumber" => sortDescending
                 ? query.OrderByDescending(x => x.ReferenceNumber.Value)
                 : query.OrderBy(x => x.ReferenceNumber.Value),
-            "status" => sortDescending
-                ? query.OrderByDescending(x => EF.Property<int>(x, "StatusId"))
-                : query.OrderBy(x => EF.Property<int>(x, "StatusId")),
             _ => query.OrderByDescending(x => x.CreatedAt)
         };
 
@@ -178,11 +171,11 @@ public class TransactionRepository : ITransactionRepository
         var startOfDay = date.Date;
         var endOfDay = startOfDay.AddDays(1);
 
-        // Status: Approved(2), Settled(7)
-        var validStatusIds = new[] { TransactionStatus.Approved.Id, TransactionStatus.Settled.Id };
+        // Valid statuses for limit calculation
+        var validStatuses = new[] { TransactionStatus.Approved, TransactionStatus.Settled };
 
-        // TransactionType: Sale(1), PreAuth(4), CashAdvance(6) - DecreasesLimit = true
-        var decreasesLimitTypeIds = new[] { TransactionType.Sale.Id, TransactionType.PreAuth.Id, TransactionType.CashAdvance.Id };
+        // Transaction types that decrease limit
+        var decreasesLimitTypes = new[] { TransactionType.Sale, TransactionType.PreAuth, TransactionType.CashAdvance };
 
         // Tüm filtreleme ve SUM DB tarafında
         var total = await _context.Transactions
@@ -190,8 +183,8 @@ public class TransactionRepository : ITransactionRepository
             .Where(x => x.CardNumberMasked == cardNumberMasked &&
                         x.CreatedAt >= startOfDay &&
                         x.CreatedAt < endOfDay &&
-                        validStatusIds.Contains(EF.Property<int>(x, "StatusId")) &&
-                        decreasesLimitTypeIds.Contains(EF.Property<int>(x, "TransactionTypeId")))
+                        validStatuses.Contains(x.Status) &&
+                        decreasesLimitTypes.Contains(x.TransactionType))
             .SumAsync(x => x.Amount.Amount, cancellationToken);
 
         return total;
@@ -202,11 +195,11 @@ public class TransactionRepository : ITransactionRepository
         var startOfMonth = new DateTime(year, month, 1);
         var endOfMonth = startOfMonth.AddMonths(1);
 
-        // Status: Approved(2), Settled(7)
-        var validStatusIds = new[] { TransactionStatus.Approved.Id, TransactionStatus.Settled.Id };
+        // Valid statuses for limit calculation
+        var validStatuses = new[] { TransactionStatus.Approved, TransactionStatus.Settled };
 
-        // TransactionType: Sale(1), PreAuth(4), CashAdvance(6) - DecreasesLimit = true
-        var decreasesLimitTypeIds = new[] { TransactionType.Sale.Id, TransactionType.PreAuth.Id, TransactionType.CashAdvance.Id };
+        // Transaction types that decrease limit
+        var decreasesLimitTypes = new[] { TransactionType.Sale, TransactionType.PreAuth, TransactionType.CashAdvance };
 
         // Tüm filtreleme ve SUM DB tarafında
         var total = await _context.Transactions
@@ -214,8 +207,8 @@ public class TransactionRepository : ITransactionRepository
             .Where(x => x.CardNumberMasked == cardNumberMasked &&
                         x.CreatedAt >= startOfMonth &&
                         x.CreatedAt < endOfMonth &&
-                        validStatusIds.Contains(EF.Property<int>(x, "StatusId")) &&
-                        decreasesLimitTypeIds.Contains(EF.Property<int>(x, "TransactionTypeId")))
+                        validStatuses.Contains(x.Status) &&
+                        decreasesLimitTypes.Contains(x.TransactionType))
             .SumAsync(x => x.Amount.Amount, cancellationToken);
 
         return total;
