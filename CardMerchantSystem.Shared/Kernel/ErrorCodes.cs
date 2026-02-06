@@ -27,6 +27,9 @@ public static class ErrorCodes
     // Transaction Module
     public const string TransactionFailed = "TRANSACTION_FAILED";
     public const string FraudDetected = "FRAUD_DETECTED";
+    public const string RefundAlreadyProcessed = "REFUND_ALREADY_PROCESSED";
+    public const string RefundAmountExceeded = "REFUND_AMOUNT_EXCEEDED";
+    public const string TransactionNotRefundable = "TRANSACTION_NOT_REFUNDABLE";
 
     // Dispute Module
     public const string DisputeNotFound = "DISPUTE_NOT_FOUND";

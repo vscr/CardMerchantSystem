@@ -45,9 +45,25 @@ public class RefundTransactionCommandHandler
             originalTransaction.Status != TransactionStatus.Settled)
             return Result.Failure<TransactionResultDto>("Sadece onaylı veya takas edilmiş işlemler iade edilebilir");
 
-        // 3. İade tutarı kontrol et
-        if (request.Amount > originalTransaction.Amount.Amount)
-            return Result.Failure<TransactionResultDto>("İade tutarı orijinal işlem tutarını aşamaz");
+        // 3. Mevcut iade toplamını kontrol et
+        var totalRefundedAmount = await _repository.GetTotalRefundedAmountAsync(
+            request.OriginalTransactionId,
+            cancellationToken);
+
+        var remainingRefundableAmount = originalTransaction.Amount.Amount - totalRefundedAmount;
+
+        // 3a. Tüm tutar zaten iade edilmiş mi?
+        if (remainingRefundableAmount <= 0)
+            return Result.Failure<TransactionResultDto>(
+                "Bu işlemin tamamı zaten iade edilmiş",
+                ErrorCodes.RefundAlreadyProcessed);
+
+        // 3b. Talep edilen tutar, kalan iade edilebilir tutarı aşıyor mu?
+        if (request.Amount > remainingRefundableAmount)
+            return Result.Failure<TransactionResultDto>(
+                $"İade edilebilir tutar: {remainingRefundableAmount:N2} {originalTransaction.Amount.Currency}. " +
+                $"Daha önce {totalRefundedAmount:N2} {originalTransaction.Amount.Currency} iade edilmiş.",
+                ErrorCodes.RefundAmountExceeded);
 
         // 4. Amount oluştur
         var amountResult = TransactionAmount.Create(request.Amount, originalTransaction.Amount.Currency);
@@ -85,13 +101,19 @@ public class RefundTransactionCommandHandler
         await _repository.AddAsync(refundTransaction, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
+        // 9. Response oluştur
+        var isFullRefund = (totalRefundedAmount + request.Amount) >= originalTransaction.Amount.Amount;
+        var responseMessage = isFullRefund
+            ? "Tam iade işlemi onaylandı"
+            : $"Kısmi iade işlemi onaylandı. Kalan iade edilebilir tutar: {remainingRefundableAmount - request.Amount:N2} {originalTransaction.Amount.Currency}";
+
         return new TransactionResultDto
         {
             IsApproved = true,
             ReferenceNumber = refundTransaction.ReferenceNumber.Value,
             AuthorizationCode = refundTransaction.AuthorizationCode?.Value,
             ResponseCode = "00",
-            ResponseMessage = "İade işlemi onaylandı",
+            ResponseMessage = responseMessage,
             Amount = refundTransaction.Amount.Amount,
             Currency = refundTransaction.Amount.Currency,
             TransactionTime = refundTransaction.CreatedAt

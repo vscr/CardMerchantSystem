@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CardMerchantSystem.Shared.Audit.Interceptors;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Transaction.Domain.Repositories;
@@ -18,10 +19,19 @@ public static class DependencyInjection
         string connectionString,
         string redisConnectionString)
     {
-        // DbContext (Write operations)
-        services.AddDbContext<TransactionDbContext>(options =>
+        // DbContext (Write operations) with Audit Interceptor
+        services.AddDbContext<TransactionDbContext>((sp, options) =>
+        {
             options.UseSqlServer(connectionString, b =>
-                b.MigrationsAssembly(typeof(TransactionDbContext).Assembly.FullName)));
+                b.MigrationsAssembly(typeof(TransactionDbContext).Assembly.FullName));
+
+            // Audit interceptor ekle
+            var auditInterceptor = sp.GetService<AuditSaveChangesInterceptor>();
+            if (auditInterceptor != null)
+            {
+                options.AddInterceptors(auditInterceptor);
+            }
+        });
 
         // Redis
         services.AddSingleton<IConnectionMultiplexer>(sp =>

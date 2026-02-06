@@ -214,6 +214,35 @@ public class TransactionRepository : ITransactionRepository
         return total;
     }
 
+    public async Task<IReadOnlyList<TransactionAggregate>> GetRefundsByOriginalTransactionIdAsync(
+        Guid originalTransactionId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Transactions
+            .AsNoTracking()
+            .Where(x => x.OriginalTransactionId == originalTransactionId &&
+                        x.TransactionType == TransactionType.Refund)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<decimal> GetTotalRefundedAmountAsync(
+        Guid originalTransactionId,
+        CancellationToken cancellationToken = default)
+    {
+        // Sadece başarılı iadeler (Approved veya Settled)
+        var validStatuses = new[] { TransactionStatus.Approved, TransactionStatus.Settled };
+
+        var total = await _context.Transactions
+            .AsNoTracking()
+            .Where(x => x.OriginalTransactionId == originalTransactionId &&
+                        x.TransactionType == TransactionType.Refund &&
+                        validStatuses.Contains(x.Status))
+            .SumAsync(x => x.Amount.Amount, cancellationToken);
+
+        return total;
+    }
+
     public async Task AddAsync(TransactionAggregate transaction, CancellationToken cancellationToken = default)
     {
         await _context.Transactions.AddAsync(transaction, cancellationToken);

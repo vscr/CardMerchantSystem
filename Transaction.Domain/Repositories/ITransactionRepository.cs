@@ -46,6 +46,21 @@ public interface ITransactionRepository
 
     Task<decimal> GetMonthlyTotalByCardAsync(string cardNumberMasked, int year, int month, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Orijinal işleme ait tüm iade işlemlerini getirir
+    /// </summary>
+    Task<IReadOnlyList<TransactionAggregate>> GetRefundsByOriginalTransactionIdAsync(
+        Guid originalTransactionId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Orijinal işlem için toplam iade edilmiş tutarı hesaplar
+    /// Sadece Approved ve Settled durumundaki iadeler dahil edilir
+    /// </summary>
+    Task<decimal> GetTotalRefundedAmountAsync(
+        Guid originalTransactionId,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(TransactionAggregate transaction, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(TransactionAggregate transaction, CancellationToken cancellationToken = default);
