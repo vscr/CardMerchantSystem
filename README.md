@@ -6,12 +6,13 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 
 ## 🎯 Proje Özeti
 
-**Tamamlanma:** %94 (17/19 modül + Domain Events + Performance Optimization ✅)  
+**Tamamlanma:** %96 (17/19 modül + Domain Events + Performance + Audit Trail ✅)  
 **Mimari:** Clean Architecture + DDD + CQRS + Event-Driven  
 **Database:** SQL Server + PostgreSQL (Multi-DB)  
 **Resilience:** Polly + Rate Limiting + Redis Cache  
 **Performance:** Dapper + Snapshot Isolation + Connection Pooling  
-**Monitoring:** Serilog + Elasticsearch + Kibana
+**Monitoring:** Serilog + Elasticsearch + Kibana  
+**Audit:** Entity Change Tracking + Dapper Writer
 
 ---
 
@@ -22,22 +23,30 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 | Modül | Açıklama | Özel Özellik |
 |-------|----------|--------------|
 | **Card** | Kart başvuru, tahsis, limit | 🌟 Domain Events (local + integration) |
-| **Merchant** | Üye işyeri, terminal yönetimi | 🌟 Multi-DB (SQL Server + PostgreSQL)<br>🌟 CQRS (EF Core + Dapper)<br>🌟 Domain Events (local + integration) |
-| **Transaction** | İşlem, provizyon, LKS | 🌟 Polly Resilience<br>🌟 Redis Cache<br>🌟 Rate Limiting<br>🌟 Domain Events (local + integration)<br>🚀 **Dapper High-Performance Read**<br>🚀 **150 TPS Load Tested** |
-| **Dispute** | İtiraz yönetimi | 🌟 Cross-module: FraudDetected dinler |
-| **Campaign** | Kampanya, kural motoru | 🌟 Cross-module: TransactionCompleted dinler |
-| **BKM** | Switch entegrasyonu | 🌟 Cross-module: TerminalActivated dinler |
-| **HSM** | Güvenlik modülü (Thales, Gemalto) | 🌟 Cross-module: CardApplicationApproved + TerminalActivated dinler |
-| **Fee** | Ücret, aidat, tarife yönetimi | 🌟 Cross-module: TransactionCompleted dinler |
+| **Merchant** | Üye işyeri, terminal yönetimi | 🌟 Multi-DB (SQL Server + PostgreSQL)<br>🌟 CQRS (EF Core + Dapper)<br>🌟 Domain Events (local + integration)<br>🔍 Audit Trail |
+| **Transaction** | İşlem, provizyon, LKS | 🌟 Polly Resilience<br>🌟 Redis Cache<br>🌟 Rate Limiting<br>🌟 Domain Events (local + integration)<br>🚀 **Dapper High-Performance Read**<br>🚀 **150 TPS Load Tested**<br>🔍 Audit Trail<br>🛡️ **Refund Duplicate Prevention** |
+| **Dispute** | İtiraz yönetimi | 🌟 Cross-module: FraudDetected dinler<br>🔍 Audit Trail |
+| **Campaign** | Kampanya, kural motoru | 🌟 Cross-module: TransactionCompleted dinler<br>🎯 **Post-Transaction Benefit Calculation**<br>🔍 Audit Trail |
+| **BKM** | Switch entegrasyonu | 🌟 Cross-module: TerminalActivated dinler<br>🔍 Audit Trail |
+| **HSM** | Güvenlik modülü (Thales, Gemalto) | 🌟 Cross-module: CardApplicationApproved + TerminalActivated dinler<br>🔍 Audit Trail |
+| **Fee** | Ücret, aidat, tarife yönetimi | 🌟 Cross-module: TransactionCompleted dinler<br>🔍 Audit Trail |
 | **Statement** | Ekstre yönetimi | Document generation |
 | **Accounting** | Muhasebe entegrasyonu | 🌟 Cross-module: TransactionCompleted dinler |
-| **MerchantReport** | Üye işyeri raporlama (FTP, mail) | Scheduled reports |
-| **MerchantSettlement** | Üye işyeri takas | Payment processing |
-| **BulkCardPrint** | Toplu kart basım (Bileşim, Austria) | 🌟 Cross-module: CardApplicationApproved dinler |
+| **MerchantReport** | Üye işyeri raporlama (FTP, mail) | Scheduled reports<br>🔍 Audit Trail |
+| **MerchantSettlement** | Üye işyeri takas | Payment processing<br>🔍 Audit Trail |
+| **BulkCardPrint** | Toplu kart basım (Bileşim, Austria) | 🌟 Cross-module: CardApplicationApproved dinler<br>🔍 Audit Trail |
 | **RegulatoryReporting** | Yasal raporlama (BDDK, TCMB) | Compliance |
-| **Courier** | Kurye entegrasyonu (Kuryenet) | Shipment tracking |
+| **Courier** | Kurye entegrasyonu (Kuryenet) | Shipment tracking<br>🔍 Audit Trail |
 | **EarlyBlockResolution** | Erken bloke çözüm | - |
 | **WorkOrder** | İş emri yönetimi (Beko, Ingenico, Teknoser) | - |
+
+### ✅ Teknik Altyapı
+
+| Özellik | Durum | Açıklama |
+|---------|-------|----------|
+| **Audit Trail** | ✅ | Entity değişiklik takibi - Merkezi Dapper Writer |
+| **Health Checks** | ⏳ | Planlandı |
+| **Günsonu Jobs** | ⏳ | Planlandı |
 
 ### ⏳ Planlanmış (2)
 
@@ -45,6 +54,172 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 |-------|---------|
 | **InstantCardPrint** (Evolis Primacy) | Düşük |
 | **Inventory** (Envanter yönetimi) | Düşük |
+
+---
+
+## 🔍 Audit Trail
+
+### Genel Bakış
+
+Tüm entity değişiklikleri (Insert, Update, Delete, SoftDelete) otomatik olarak `audit.AuditLogs` tablosuna kaydedilir.
+
+**Kaydedilen Bilgiler:**
+- **Kim** yaptı (UserId, UserName)
+- **Ne zaman** yaptı (Timestamp)
+- **Hangi entity** üzerinde (EntityName, EntityId)
+- **Ne değiştirdi** (OldValues, NewValues, ChangedColumns)
+- **Nereden** yaptı (IpAddress, CorrelationId)
+
+### Mimari (Yaklaşım 2 - Merkezi Dapper Writer)
+
+```
+┌──────────────────┐     ┌─────────────────────────┐     ┌──────────────┐
+│  DbContext       │────▶│  SaveChangesAsync()     │────▶│   Database   │
+│  (Any Module)    │     └───────────┬─────────────┘     └──────────────┘
+└──────────────────┘                 │
+                         ┌───────────▼─────────────┐
+                         │  AuditSaveChangesInterceptor │
+                         └───────────┬─────────────┘
+                                     │
+                         ┌───────────▼─────────────┐
+                         │   IAuditLogWriter       │
+                         │   (Dapper - Direct SQL) │
+                         └───────────┬─────────────┘
+                                     │
+                         ┌───────────▼─────────────┐
+                         │   audit.AuditLogs       │
+                         │   (Merkezi Tablo)       │
+                         └─────────────────────────┘
+```
+
+### Avantajlar
+
+| Özellik | Açıklama |
+|---------|----------|
+| **DbContext'ten bağımsız** | Her modülün DbContext'ine AuditLogs eklemeye gerek yok |
+| **Dapper ile doğrudan SQL** | Performanslı, ayrı connection kullanır |
+| **Fire-and-forget** | Ana işlemi bloke etmez |
+| **Multi-database** | SQL Server ve PostgreSQL destekler |
+| **Smart Enum desteği** | Cycle olmadan serialize eder |
+
+### API Endpoints
+
+| Endpoint | Açıklama |
+|----------|----------|
+| `GET /api/audit` | Sayfalı audit log listesi |
+| `GET /api/audit/{id}` | ID ile audit log getir |
+| `GET /api/audit/entity/{entityName}/{entityId}` | Entity geçmişi |
+| `GET /api/audit/user/{userId}` | Kullanıcı aksiyonları |
+| `GET /api/audit/date-range` | Tarih aralığı sorgusu |
+| `GET /api/audit/entity-types` | Desteklenen entity tipleri |
+| `GET /api/audit/action-types` | Aksiyon tipleri |
+
+### Kurulum
+
+**1. Migration:**
+```powershell
+Add-Migration InitAuditModule -Context AuditDbContext -OutputDir Audit/Persistence/Migrations/SqlServer -Project CardMerchantSystem.Shared -StartupProject CardMerchantSystem.API
+
+Update-Database -Context AuditDbContext -Project CardMerchantSystem.Shared -StartupProject CardMerchantSystem.API
+```
+
+**2. Program.cs:**
+```csharp
+// DİĞER SERVİSLERDEN ÖNCE
+builder.Services.AddAuditTrail();
+```
+
+**3. Her modülün DI'ına interceptor ekle:**
+```csharp
+services.AddDbContext<XxxDbContext>((sp, options) =>
+{
+    options.ConfigureDatabase(provider, connectionString);
+    
+    var auditInterceptor = sp.GetService<AuditSaveChangesInterceptor>();
+    if (auditInterceptor != null)
+        options.AddInterceptors(auditInterceptor);
+});
+```
+
+---
+
+## 🎯 Campaign Module (Post-Transaction)
+
+### Kampanya Uygulama Akışı
+
+İşlem tamamlandıktan sonra (`TransactionCompletedIntegrationEvent`) kampanya kazanımları hesaplanır:
+
+```
+Transaction Approve
+       │
+       ▼
+TransactionCompletedIntegrationEvent
+       │
+       ▼
+CampaignApplicationService.ApplyEligibleCampaignsAsync()
+       │
+       ├─► Aktif kampanyaları bul
+       ├─► Müşteri kullanım limiti kontrolü
+       ├─► Kural değerlendirme (MCC, BIN, Amount)
+       ├─► İndirim/Puan/Cashback hesapla
+       └─► CampaignUsage kaydet
+```
+
+### Kural Tipleri
+
+| RuleType | Açıklama | Örnek |
+|----------|----------|-------|
+| `MinAmount` | Minimum işlem tutarı | `>= 100` |
+| `MaxAmount` | Maksimum işlem tutarı | `<= 5000` |
+| `MCC` | MCC kategorisi | `IN 5411,5412` (market) |
+| `CardBIN` | Kart BIN kontrolü | `IN 411111,422222` |
+
+### Kampanya Tipleri
+
+| Tip | Açıklama |
+|-----|----------|
+| **Discount** | Anlık indirim |
+| **Cashback** | Para iadesi |
+| **Points** | Puan kazanım |
+| **BonusPoints** | Ekstra puan |
+| **Installment** | Taksit |
+| **FreeShipping** | Ücretsiz kargo |
+
+### Örnek Log Çıktısı
+
+```
+🎯 [Campaign] Kampanya hesaplama başladı - TransactionId: abc123, Amount: 500.00
+  📌 CMP2024010112345 uygulanamadı: Minimum işlem tutarı 1000 TL olmalı
+  📌 CMP2024010167890: Discount - Discount=25.00, Points=0, Cashback=0
+  📌 CMP2024010199999: Points - Discount=0, Points=500, Cashback=0
+✅ [Campaign] 2 kampanya uygulandı - TotalDiscount: 25.00, TotalPoints: 500
+```
+
+---
+
+## 🛡️ Transaction Refund Validation
+
+### İade Kontrolü
+
+Aynı işlemin birden fazla kez veya tutarını aşan şekilde iade edilmesi engellenir:
+
+| Senaryo | Davranış |
+|---------|----------|
+| Tam iade yapılmış işlem | ❌ `REFUND_ALREADY_PROCESSED` |
+| Kısmi iade + kalan aşan tutar | ❌ `REFUND_AMOUNT_EXCEEDED` |
+| Kısmi iade + kalan içinde | ✅ İzin verilir |
+
+### Örnek Akış
+
+```
+Orijinal İşlem: 100 TRY
+
+İade #1: 30 TRY  → ✅ "Kısmi iade onaylandı. Kalan: 70 TRY"
+İade #2: 50 TRY  → ✅ "Kısmi iade onaylandı. Kalan: 20 TRY"
+İade #3: 30 TRY  → ❌ "İade edilebilir: 20 TRY. Daha önce 80 TRY iade edilmiş."
+İade #4: 20 TRY  → ✅ "Tam iade işlemi onaylandı"
+İade #5: 10 TRY  → ❌ "Bu işlemin tamamı zaten iade edilmiş"
+```
 
 ---
 
@@ -80,6 +255,7 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 | **Dapper Read Repository** | `WITH (NOLOCK)` raw SQL | 5-15x hızlı read |
 | **Composite Indexes** | 7 optimized index | %80 query time azalma |
 | **AsNoTracking** | EF Core read queries | Memory optimization |
+| **Audit Fire-and-Forget** | Async audit yazma | Ana işlemi bloke etmez |
 
 ---
 
@@ -93,6 +269,7 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 │                   Application Layer                         │
 │    Commands/Queries (MediatR), DTOs, Validators            │
 │    Event Handlers (Same-Module + Cross-Module)             │
+│    Services (CampaignApplicationService, etc.)             │
 ├─────────────────────────────────────────────────────────────┤
 │                     Domain Layer                            │
 │   Aggregates, Entities, Value Objects, Smart Enums,        │
@@ -101,6 +278,9 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 │                 Infrastructure Layer                        │
 │  EF Core (Write), Dapper (Read), PostgreSQL, SQL Server    │
 │  Redis Cache, Polly Resilience, External APIs              │
+├─────────────────────────────────────────────────────────────┤
+│                    Shared Layer                             │
+│  Audit Trail, Kernel, Events, Data Extensions              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -116,6 +296,113 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 | **Repository** | Tümü | Data access abstraction |
 | **Mediator** | Tümü | MediatR (commands/queries/events) |
 | **Domain Events** | Card, Merchant, Transaction | ✅ Local events + Cross-module integration events |
+| **Interceptor** | Audit | EF Core SaveChanges interceptor |
+
+---
+
+## 🌟 Öne Çıkan Özellikler
+
+### 1. Domain Events (Event-Driven Architecture) ✅
+
+**İki katmanlı event sistem:**
+
+```
+Aggregate
+    ├── Local Domain Events       → Same-module handler'lar (logging, audit)
+    └── Integration Events        → Cross-module handler'lar (iş akışı)
+```
+
+#### Integration Events (Shared)
+
+| Event | Tetikleyen | Dinleyen Modüller |
+|-------|-----------|-------------------|
+| `CardApplicationApprovedIntegrationEvent` | Card.Approve() | BulkCardPrint, HSM |
+| `CardPrintedIntegrationEvent` | Card.MarkAsPrinted() | - |
+| `MerchantApprovedIntegrationEvent` | Merchant.Approve() | - |
+| `TerminalActivatedIntegrationEvent` | Merchant.ActivateTerminal() | HSM, BKM |
+| `TransactionCompletedIntegrationEvent` | Transaction.Approve() | Campaign, Fee, Accounting |
+| `FraudDetectedIntegrationEvent` | Transaction.SetFraudCheckResult() | Dispute |
+
+#### Test Senaryoları (Doğrulandı ✅)
+
+**Senaryo 1: Terminal Aktivasyon**
+```
+PUT /api/Merchants/{merchantId}/terminals/{terminalId}/activate
+```
+```
+🎉 [Merchant] Terminal aktiv edildi          ← Local event
+🔄 [BKM] Terminal BKM Switch'e kaydediliyor ← Integration event
+✅ [BKM] Terminal BKM Switch'e kaydedildi
+🔐 [HSM] Terminal key'leri üretiliyor       ← Integration event
+✅ [HSM] Terminal key'leri üretildi
+🔍 [Audit] Terminal değişikliği kaydedildi  ← Audit Trail
+```
+
+**Senaryo 2: Transaction Onay (Satış)**
+```
+POST /api/Transactions
+{
+  "transactionTypeId": 1,    // Sale
+  "amount": 150.50,          // Fraud pass, limit OK
+  ...
+}
+```
+```
+🆕 [Transaction] İşlem oluşturuldu          ← Local event
+✅ [Transaction] İşlem onaylandı            ← Local event
+🎯 [Campaign] Kampanya kazanımları hesaplanıyor  ← Integration event
+💰 [Fee] Komisyon hesaplıyor                ← Integration event
+📊 [Accounting] Muhasebe kayıt oluşturuyor  ← Integration event
+🔍 [Audit] Transaction değişikliği kaydedildi  ← Audit Trail
+```
+
+---
+
+### 2. Multi-Database Support (Merchant Modülü)
+
+**Tek kod tabanı, iki veritabanı:**
+
+```
+MerchantDbContextBase (Abstract)
+    ├── MerchantDbContext (SQL Server)
+    └── MerchantDbContext_Pg (PostgreSQL)
+```
+
+**Provider değiştirme:**
+```json
+{
+  "Database": {
+    "Provider": "PostgreSql"  // veya "SqlServer"
+  }
+}
+```
+
+---
+
+### 3. CQRS Pattern
+
+**Write (EF Core):**
+```csharp
+// Domain-driven, business logic with tracking
+var merchant = MerchantAggregate.Create(...);
+await _repository.AddAsync(merchant);
+await _repository.SaveChangesAsync(); // Domain events + Audit Trail
+```
+
+**Read (Dapper):**
+```csharp
+// High-performance, optimized queries
+var transactions = await _dapperRepository.GetPagedAsync(filter);
+```
+
+---
+
+### 4. Resilience Patterns (Transaction Modülü)
+
+**Polly Policies:**
+- **Retry:** 3 attempts with exponential backoff
+- **Circuit Breaker:** 5 failures → 30s break
+- **Timeout:** 30s per request
 
 ---
 
@@ -140,6 +427,7 @@ docker-compose up -d
 - PgAdmin: `http://localhost:5050`
 - Elasticsearch: `http://localhost:9200`
 - Kibana: `http://localhost:5601`
+- Redis: `localhost:6379`
 
 ### 3. Database Konfigürasyonu
 
@@ -170,10 +458,25 @@ ALTER DATABASE CardMerchantDb SET READ_COMMITTED_SNAPSHOT ON;
 
 ```powershell
 # Package Manager Console
+
+# Auth Module
 Update-Database -Context AuthDbContext -Project CardMerchantSystem.API -StartupProject CardMerchantSystem.API
+
+# Audit Module (YENİ)
+Update-Database -Context AuditDbContext -Project CardMerchantSystem.Shared -StartupProject CardMerchantSystem.API
+
+# Card Module
 Update-Database -Context CardDbContext -Project Card.Infrastructure -StartupProject CardMerchantSystem.API
+
+# Merchant Module
 Update-Database -Context MerchantDbContext -Project Merchant.Infrastructure -StartupProject CardMerchantSystem.API
+
+# Transaction Module
 Update-Database -Context TransactionDbContext -Project Transaction.Infrastructure -StartupProject CardMerchantSystem.API
+
+# Campaign Module
+Update-Database -Context CampaignDbContext -Project Campaign.Infrastructure -StartupProject CardMerchantSystem.API
+
 # ... (diğer modüller için tekrarla)
 ```
 
@@ -213,6 +516,7 @@ dotnet run --project CardMerchantSystem.API
 | **Jobs** | Hangfire |
 | **Logging** | Serilog + Elasticsearch + Kibana |
 | **Containerization** | Docker Compose |
+| **Audit** | EF Core Interceptor + Dapper |
 
 ---
 
@@ -240,21 +544,6 @@ Transaction modülünde **yüksek performanslı read endpoint'leri** mevcuttur:
 | GetStats (1M kayıt) | ~1200ms | ~80ms | **15x** |
 | CardDailyTotal | ~150ms | ~15ms | **10x** |
 | GetById | ~25ms | ~8ms | **3x** |
-
-### Kullanım
-
-```bash
-# Health check (no auth)
-curl -k https://localhost:7202/api/transactions/fast/health
-
-# Sayfalı liste (with auth)
-curl -k -H "Authorization: Bearer TOKEN" \
-  "https://localhost:7202/api/transactions/fast?pageNumber=1&pageSize=20"
-
-# İstatistikler
-curl -k -H "Authorization: Bearer TOKEN" \
-  "https://localhost:7202/api/transactions/fast/stats?startDate=2026-01-01&endDate=2026-01-31"
-```
 
 ---
 
@@ -286,156 +575,6 @@ curl -k -H "Authorization: Bearer TOKEN" \
 | **Relaxed** | 1000/dk/IP | Read endpoint'ler |
 | **Report** | 20/dk/User | Ağır raporlar |
 
-### Load Test için Devre Dışı Bırakma
-
-```json
-{
-  "RateLimiting": {
-    "Enabled": false
-  }
-}
-```
-
----
-
-## 🌟 Öne Çıkan Özellikler
-
-### 1. Domain Events (Event-Driven Architecture) ✅
-
-**İki katmanlı event sistem:**
-
-```
-Aggregate
-    ├── Local Domain Events       → Same-module handler'lar (logging, audit)
-    └── Integration Events        → Cross-module handler'lar (iş akışı)
-```
-
-#### Integration Events (Shared)
-
-| Event | Tetikleyen | Dinleyen Modüller |
-|-------|-----------|-------------------|
-| `CardApplicationApprovedIntegrationEvent` | Card.Approve() | BulkCardPrint, HSM |
-| `CardPrintedIntegrationEvent` | Card.MarkAsPrinted() | - |
-| `MerchantApprovedIntegrationEvent` | Merchant.Approve() | - |
-| `TerminalActivatedIntegrationEvent` | Merchant.ActivateTerminal() | HSM, BKM |
-| `TransactionCompletedIntegrationEvent` | Transaction.Approve() | Campaign, Fee, Accounting |
-| `FraudDetectedIntegrationEvent` | Transaction.SetFraudCheckResult() | Dispute |
-
-#### Test Senaryoları (Doğrulandı ✅)
-
-**Senaryo 1: Terminal Aktivasyon**
-```
-PUT /api/Merchants/{merchantId}/terminals/{terminalId}/activate
-```
-```
-🎉 [Merchant] Terminal aktiv edildi          ← Local event
-🔄 [BKM] Terminal BKM Switch'e kaydediliyor ← Integration event
-✅ [BKM] Terminal BKM Switch'e kaydedildi
-🔐 [HSM] Terminal key'leri üretiliyor       ← Integration event
-✅ [HSM] Terminal key'leri üretildi
-```
-
-**Senaryo 2: Transaction Onay (Satış)**
-```
-POST /api/Transactions
-{
-  "transactionTypeId": 1,    // Sale
-  "amount": 150.50,          // Fraud pass, limit OK
-  ...
-}
-```
-```
-🆕 [Transaction] İşlem oluşturuldu          ← Local event
-✅ [Transaction] İşlem onaylandı            ← Local event
-🎯 [Campaign] Kampanya puanları hesaplıyor  ← Integration event
-💰 [Fee] Komisyon hesaplıyor                ← Integration event
-📊 [Accounting] Muhasebe kayıt oluşturuyor  ← Integration event
-```
-
----
-
-### 2. Multi-Database Support (Merchant Modülü)
-
-**Tek kod tabanı, iki veritabanı:**
-
-```
-MerchantDbContextBase (Abstract)
-    ├── MerchantDbContext (SQL Server)
-    └── MerchantDbContext_Pg (PostgreSQL)
-```
-
-**Provider değiştirme:**
-```json
-{
-  "Database": {
-    "Provider": "PostgreSql"  // veya "SqlServer"
-  }
-}
-```
-
----
-
-### 3. CQRS Pattern
-
-**Write (EF Core):**
-```csharp
-// Domain-driven, business logic with tracking
-var merchant = MerchantAggregate.Create(...);
-await _repository.AddAsync(merchant);
-await _repository.SaveChangesAsync(); // Domain events dispatched
-```
-
-**Read (Dapper):**
-```csharp
-// High-performance, optimized queries
-var transactions = await _dapperRepository.GetPagedAsync(filter);
-```
-
----
-
-### 4. Resilience Patterns (Transaction Modülü)
-
-**Polly Policies:**
-- **Retry:** 3 attempts with exponential backoff
-- **Circuit Breaker:** 5 failures → 30s break
-- **Timeout:** 30s per request
-
----
-
-## 📊 Load Testing
-
-### Test Aracı
-
-Proje içinde `TxLoadTest` console uygulaması mevcuttur.
-
-### Örnek Kullanım
-
-```powershell
-# 10 dakika, 150 TPS, gerçekçi mix
-dotnet run --project TxLoadTest -- \
-  --duration 600 \
-  --rps 150 \
-  --concurrency 220 \
-  --mix "sale=92,refund=6,cancel=2" \
-  --warmup 3000 \
-  --authUrl https://localhost:7202/api/Auth/login \
-  --txUrl https://localhost:7202/api/Transactions \
-  --username admin \
-  --password "Admin123!" \
-  --insecure true
-```
-
-### Parametreler
-
-| Parametre | Açıklama | Varsayılan |
-|-----------|----------|------------|
-| `--duration` | Test süresi (saniye) | - |
-| `--rps` | Saniyedeki istek sayısı | 150 |
-| `--concurrency` | Eşzamanlı bağlantı | 200 |
-| `--mix` | İşlem tipi dağılımı | sale=92,refund=6,cancel=2 |
-| `--warmup` | Isınma istekleri | 2000 |
-| `--total` | Toplam istek (duration yerine) | - |
-
 ---
 
 ## 📁 Proje Yapısı
@@ -447,26 +586,48 @@ CardMerchantSystem/
 ├── CardMerchantSystem.API/
 │   ├── Controllers/
 │   │   ├── TransactionsController.cs      # EF Core endpoints
-│   │   └── TransactionsFastController.cs  # Dapper endpoints 🚀
+│   │   ├── TransactionsFastController.cs  # Dapper endpoints 🚀
+│   │   └── AuditController.cs             # Audit Trail API 🔍
 │   ├── Configuration/
-│   │   └── RateLimitingConfiguration.cs   # Rate limit policies
+│   │   └── RateLimitingConfiguration.cs
 │   └── Auth/
 ├── CardMerchantSystem.Shared/
 │   ├── Kernel/
-│   └── Events/
+│   ├── Events/
+│   ├── Data/
+│   └── Audit/                             # 🔍 Audit Trail
+│       ├── Entities/
+│       │   └── AuditLog.cs
+│       ├── Enums/
+│       │   └── AuditActionType.cs
+│       ├── Interceptors/
+│       │   └── AuditSaveChangesInterceptor.cs
+│       ├── Services/
+│       │   ├── IAuditService.cs
+│       │   └── AuditService.cs
+│       ├── Persistence/
+│       │   ├── AuditDbContext.cs
+│       │   └── AuditDbContext_Pg.cs
+│       ├── AuditEntry.cs
+│       ├── AuditContextAccessor.cs
+│       ├── IAuditLogWriter.cs
+│       ├── AuditLogWriter.cs
+│       └── DependencyInjection.cs
 └── Modules/
     ├── Transaction/
+    │   ├── Transaction.Application/
+    │   │   └── Commands/
+    │   │       └── RefundTransactionCommand.cs  # 🛡️ Duplicate prevention
     │   └── Transaction.Infrastructure/
     │       ├── Dapper/                    # 🚀 High-performance read
-    │       │   ├── DapperContext.cs
-    │       │   ├── TransactionQueries.cs
-    │       │   ├── ReportQueries.cs
-    │       │   ├── TransactionReadRepository.cs
-    │       │   └── TransactionReportRepository.cs
-    │       ├── Repositories/
-    │       │   └── TransactionRepository.cs  # Optimized EF Core
-    │       └── Configurations/
-    │           └── TransactionConfiguration.cs  # Composite indexes
+    │       └── Repositories/
+    ├── Campaign/
+    │   └── Campaign.Application/
+    │       ├── Services/
+    │       │   ├── ICampaignApplicationService.cs  # 🎯 Post-tx service
+    │       │   └── CampaignApplicationService.cs
+    │       └── EventHandlers/
+    │           └── TransactionCompletedIntegrationEventHandler.cs
     ├── Merchant/
     ├── Card/
     └── ... (diğer modüller)
@@ -484,9 +645,13 @@ CardMerchantSystem/
 | **CardOperator** | Kart operasyonları |
 | **MerchantOperator** | Üye işyeri operasyonları |
 | **FinanceOperator** | Finans işlemleri |
-| **ComplianceOfficer** | Yasal raporlama |
+| **ComplianceOfficer** | Yasal raporlama + Audit erişimi |
 | **CallCenterAgent** | Çağrı merkezi |
 | **Viewer** | Sadece görüntüleme |
+
+### Audit API Erişimi
+
+Audit endpoint'lerine sadece `Admin` ve `ComplianceOfficer` rolleri erişebilir.
 
 ---
 
@@ -518,15 +683,16 @@ ALTER DATABASE CardMerchantDb SET READ_COMMITTED_SNAPSHOT ON;
 "RateLimiting": { "Enabled": false }
 ```
 
-### Database Bağlantı Hatası
+### Audit Trail Sorunları
 
-```bash
-# PostgreSQL çalışıyor mu?
-docker ps | grep postgres
+**1. Audit logları yazılmıyor:**
+- `AddAuditTrail()` Program.cs'de diğer servislerden önce çağrıldı mı?
+- DbContext'e interceptor eklendi mi?
+- `audit` schema ve `AuditLogs` tablosu var mı?
 
-# Yeniden başlat
-docker-compose restart postgres
-```
+**2. JSON serialize hatası (cycle):**
+- Smart Enum'lar `SimplifyValue()` ile basitleştiriliyor
+- Kompleks tipler `ToString()` ile kaydediliyor
 
 ---
 
@@ -534,16 +700,17 @@ docker-compose restart postgres
 
 ### Kısa Vadeli
 
-- [ ] Redis Cache entegrasyonu (Transaction hot data)
+- [ ] Health Checks (DB, Redis, External APIs)
+- [ ] Günsonu Jobs (Settlement, Reconciliation)
 - [ ] InstantCardPrint Module
 - [ ] Inventory Module
-- [ ] Integration Tests
 
 ### Orta Vadeli
 
 - [ ] Event Sourcing (Dispute modülü)
 - [ ] GraphQL API
 - [ ] Real-time Notifications (SignalR)
+- [ ] Audit Log Retention Policy
 
 ### Uzun Vadeli
 
@@ -559,7 +726,7 @@ Bu proje eğitim amaçlıdır ve MIT lisansı altında paylaşılmaktadır.
 
 ---
 
-**Son Güncelleme:** 04 Şubat 2026  
-**Versiyon:** 1.6.0  
-**Tamamlanma:** %94 (17/19 modül + Domain Events + Performance Optimization)  
-**Durum:** ✅ Production-Ready | 🚀 150 TPS Load Tested
+**Son Güncelleme:** 07 Şubat 2026  
+**Versiyon:** 1.7.0  
+**Tamamlanma:** %96 (17/19 modül + Domain Events + Performance + Audit Trail)  
+**Durum:** ✅ Production-Ready | 🚀 150 TPS Load Tested | 🔍 Full Audit Trail
