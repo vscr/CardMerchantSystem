@@ -1,4 +1,5 @@
-﻿using Fee.Domain.Repositories;
+﻿using CardMerchantSystem.Shared.Audit.Interceptors;
+using Fee.Domain.Repositories;
 using Fee.Domain.Services;
 using Fee.Infrastructure.Persistence;
 using Fee.Infrastructure.Repositories;
@@ -13,9 +14,18 @@ public static class DependencyInjection
     public static IServiceCollection AddFeeInfrastructure(this IServiceCollection services, string connectionString)
     {
         // DbContext
-        services.AddDbContext<FeeDbContext>(options =>
+        services.AddDbContext<FeeDbContext>((sp, options) =>
+        {
             options.UseSqlServer(connectionString, b =>
-                b.MigrationsAssembly(typeof(FeeDbContext).Assembly.FullName)));
+                b.MigrationsAssembly(typeof(FeeDbContext).Assembly.FullName));
+
+            // Audit interceptor ekle
+            var auditInterceptor = sp.GetService<AuditSaveChangesInterceptor>();
+            if (auditInterceptor != null)
+            {
+                options.AddInterceptors(auditInterceptor);
+            }
+        });
 
         // Repositories
         services.AddScoped<ITariffRepository, TariffRepository>();

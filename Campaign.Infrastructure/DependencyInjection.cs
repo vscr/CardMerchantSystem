@@ -2,6 +2,7 @@
 using Campaign.Infrastructure.Configurations;
 using Campaign.Infrastructure.Persistence;
 using Campaign.Infrastructure.Repositories;
+using CardMerchantSystem.Shared.Audit.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,9 +13,18 @@ public static class DependencyInjection
     public static IServiceCollection AddCampaignInfrastructure(this IServiceCollection services, string connectionString)
     {
         // DbContext
-        services.AddDbContext<CampaignDbContext>(options =>
+        services.AddDbContext<CampaignDbContext>((sp, options) =>
+        {
             options.UseSqlServer(connectionString, b =>
-                b.MigrationsAssembly(typeof(CampaignDbContext).Assembly.FullName)));
+                b.MigrationsAssembly(typeof(CampaignDbContext).Assembly.FullName));
+
+            // Audit interceptor ekle
+            var auditInterceptor = sp.GetService<AuditSaveChangesInterceptor>();
+            if (auditInterceptor != null)
+            {
+                options.AddInterceptors(auditInterceptor);
+            }
+        });
 
         // Repositories
         services.AddScoped<ICampaignRepository, CampaignRepository>();

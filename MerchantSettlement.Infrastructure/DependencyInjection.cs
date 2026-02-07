@@ -1,4 +1,5 @@
-﻿using MerchantSettlement.Domain.Repositories;
+﻿using CardMerchantSystem.Shared.Audit.Interceptors;
+using MerchantSettlement.Domain.Repositories;
 using MerchantSettlement.Infrastructure.Persistence;
 using MerchantSettlement.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -11,9 +12,18 @@ namespace MerchantSettlement.Infrastructure
         public static IServiceCollection AddMerchantSettlementInfrastructure(this IServiceCollection services, string connectionString)
         {
             // DbContext
-            services.AddDbContext<MerchantSettlementDbContext>(options =>
+            services.AddDbContext<MerchantSettlementDbContext>((sp, options) =>
+            {
                 options.UseSqlServer(connectionString, b =>
-                    b.MigrationsAssembly(typeof(MerchantSettlementDbContext).Assembly.FullName)));
+                    b.MigrationsAssembly(typeof(MerchantSettlementDbContext).Assembly.FullName));
+
+                // Audit interceptor ekle
+                var auditInterceptor = sp.GetService<AuditSaveChangesInterceptor>();
+                if (auditInterceptor != null)
+                {
+                    options.AddInterceptors(auditInterceptor);
+                }
+            });
 
             // Repositories
             services.AddScoped<IMerchantSettlementReconciliationRepository, MerchantSettlementReconciliationRepository>();
