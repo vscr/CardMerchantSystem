@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Campaign.Application.Services;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -15,6 +16,9 @@ public static class DependencyInjection
 
         // FluentValidation validators
         services.AddValidatorsFromAssembly(assembly);
+
+        // Application Services
+        services.AddScoped<ICampaignApplicationService, CampaignApplicationService>();
 
         return services;
     }
