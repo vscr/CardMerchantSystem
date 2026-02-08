@@ -12,6 +12,7 @@ public interface IWorkOrderItemRepository
     Task<IReadOnlyList<WorkOrderItem>> GetByAssignedToAsync(string assignedTo, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<WorkOrderItem>> GetOpenOrdersAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<WorkOrderItem>> GetOverdueOrdersAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<WorkOrderItem>> GetCompletedOrdersAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<WorkOrderItem>> GetPendingApprovalAsync(string approverUsername, CancellationToken cancellationToken = default);
     Task AddAsync(WorkOrderItem item, CancellationToken cancellationToken = default);
     void Update(WorkOrderItem item);

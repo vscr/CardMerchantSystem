@@ -23,6 +23,10 @@ public class WorkOrdersController : ApiControllerBase
     public async Task<ActionResult<IReadOnlyList<WorkOrderItemDto>>> GetOverdue(CancellationToken cancellationToken)
         => Ok(await _mediator.Send(new GetOverdueWorkOrdersQuery(), cancellationToken));
 
+    [HttpGet("completed")]
+    public async Task<ActionResult<IReadOnlyList<WorkOrderItemDto>>> GetCompleted(CancellationToken cancellationToken)
+    => Ok(await _mediator.Send(new GetCompletedWorkOrdersQuery(), cancellationToken));
+
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<WorkOrderItemDto>> GetById(
         Guid id,

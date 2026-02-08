@@ -74,6 +74,18 @@ public class WorkOrderItemRepository : IWorkOrderItemRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<WorkOrderItem>> GetCompletedOrdersAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        return await _context.WorkOrderItems
+            .Include(x => x.Notes)
+            .Include(x => x.Approvals)
+            .Where(x => 
+                        x.Status == WorkOrderStatus.Completed )
+            .OrderBy(x => x.DueDate)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<WorkOrderItem>> GetPendingApprovalAsync(string approverUsername, CancellationToken cancellationToken = default)
         => await _context.WorkOrderItems
             .Include(x => x.Notes)
