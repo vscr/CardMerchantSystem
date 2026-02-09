@@ -493,6 +493,13 @@ try
         "5 0 1 * *");
 
     app.MapControllers();
+   
+    
+    // React static files servis et
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+
+    app.MapFallbackToFile("index.html");
 
     Log.Information("Application starting on {Environment}", app.Environment.EnvironmentName);
     Log.Information("Swagger available at: /swagger");
