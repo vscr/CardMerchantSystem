@@ -1,5 +1,4 @@
-﻿
-using Accounting.Application;
+﻿using Accounting.Application;
 using Accounting.Infrastructure;
 using BKM.Application;
 using BKM.Infrastructure;
@@ -38,6 +37,7 @@ using MerchantReport.Application;
 using MerchantReport.Infrastructure;
 using MerchantSettlement.Application;
 using MerchantSettlement.Infrastructure;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -48,6 +48,7 @@ using Serilog.Events;
 using Serilog.Sinks.Elasticsearch;
 using Statement.Application;
 using Statement.Infrastructure;
+using System.Security.Claims;
 using System.Text;
 using Transaction.Application;
 using Transaction.Infrastructure;
@@ -67,9 +68,6 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
-
-
-
     Log.Information("Starting CardMerchantSystem API...");
 
     var builder = WebApplication.CreateBuilder(args);
@@ -92,10 +90,8 @@ try
     Log.Information("Connection string: {ConnectionString}",
         databaseOptions.GetConnectionString().Substring(0, Math.Min(50, databaseOptions.GetConnectionString().Length)) + "...");
 
-    // Database options'ı servislere ekle
     builder.Services.Configure<DatabaseOptions>(
         builder.Configuration.GetSection(DatabaseOptions.SectionName));
-
 
     // ══════════════════════════════════════════════════════════════
     // SERILOG CONFIGURATION
@@ -113,16 +109,6 @@ try
             .Enrich.WithProperty("Application", "CardMerchantSystem")
             .WriteTo.Console(
                 outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
-            //.WriteTo.File(
-            //    path: "Logs/log-.txt",
-            //    rollingInterval: RollingInterval.Day,
-            //    retainedFileCountLimit: 30,
-            //    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
-            //.WriteTo.File(
-            //    path: "Logs/log-.json",
-            //    rollingInterval: RollingInterval.Day,
-            //    retainedFileCountLimit: 30,
-            //    formatter: new Serilog.Formatting.Compact.CompactJsonFormatter())
             .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(
                 context.Configuration["Serilog:WriteTo:4:Args:nodeUris"] ?? "http://localhost:9200"))
             {
@@ -143,31 +129,74 @@ try
         ?? "localhost:6379";
 
     // ══════════════════════════════════════════════════════════════
-    // JWT AUTHENTICATION
+    // AUTHENTICATION (Dual-Mode: Local JWT / Keycloak)
     // ══════════════════════════════════════════════════════════════
-    var jwtSecret = builder.Configuration["Jwt:Secret"]!;
-    var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
-    var jwtAudience = builder.Configuration["Jwt:Audience"]!;
+    var authProvider = builder.Configuration["AuthProvider"] ?? "Local";
+    Log.Information("Auth Provider: {AuthProvider}", authProvider);
 
-    builder.Services.AddAuthentication(options =>
+    if (authProvider == "Keycloak")
     {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
+        // Keycloak JWT Validation (RS256 - Asymmetric)
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.Authority = builder.Configuration["Keycloak:Authority"];
+                options.Audience = builder.Configuration["Keycloak:Audience"];
+                options.RequireHttpsMetadata = builder.Configuration.GetValue<bool>("Keycloak:RequireHttpsMetadata");
+                options.MetadataAddress = builder.Configuration["Keycloak:MetadataAddress"]!;
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = builder.Configuration["Keycloak:Authority"],
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    NameClaimType = "preferred_username",
+                    RoleClaimType = ClaimTypes.Role
+                };
+            });
+
+        // Keycloak claim → .NET ClaimTypes dönüşümü
+        builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformer>();
+
+        // Keycloak Admin API Client
+        builder.Services.AddHttpClient<KeycloakAdminClient>();
+
+        Log.Information("Keycloak authentication configured - Authority: {Authority}",
+            builder.Configuration["Keycloak:Authority"]);
+    }
+    else
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        // Local JWT Validation (HS256 - Symmetric) — Mevcut sistem
+        var jwtSecret = builder.Configuration["Jwt:Secret"]!;
+        var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
+        var jwtAudience = builder.Configuration["Jwt:Audience"]!;
+
+        builder.Services.AddAuthentication(options =>
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
-        };
-    });
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+            };
+        });
 
+        Log.Information("Local JWT authentication configured");
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // AUTHORIZATION POLICIES (Auth provider'dan bağımsız)
+    // ══════════════════════════════════════════════════════════════
     builder.Services.AddAuthorization(options =>
     {
         // Admin Only
@@ -234,12 +263,27 @@ try
     });
 
     // ══════════════════════════════════════════════════════════════
+    // HTTP CLIENT FACTORY (Keycloak token endpoint çağrıları için)
+    // ══════════════════════════════════════════════════════════════
+    builder.Services.AddHttpClient();
+
+    // ══════════════════════════════════════════════════════════════
     // AUTH SERVICES
     // ══════════════════════════════════════════════════════════════
     builder.Services.AddScoped<IJwtService, JwtService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IMenuService, MenuService>();
-    builder.Services.AddScoped<IUserService, UserService>();
+
+    // User Service (Provider'a göre seçim)
+    if (authProvider == "Keycloak")
+    {
+        builder.Services.AddScoped<IUserService, KeycloakUserService>();
+    }
+    else
+    {
+        builder.Services.AddScoped<IUserService, UserService>();
+    }
+
     builder.Services.AddScoped<IRoleService, RoleService>();
     builder.Services.AddScoped<IDashboardService, DashboardService>();
     builder.Services.AddScoped<ILocalizationService, LocalizationService>();
@@ -265,7 +309,6 @@ try
     // Merchant Module
     builder.Services.AddMerchantApplication();
     builder.Services.AddMerchantInfrastructure(builder.Configuration);
-
 
     // Transaction Module
     builder.Services.AddTransactionApplication();
@@ -354,11 +397,6 @@ try
 
     builder.Services.AddHangfireServer();
 
-    //// Jobs
-    //builder.Services.AddScoped<SettlementJob>();
-    //builder.Services.AddScoped<DailyLimitResetJob>();
-    //builder.Services.AddScoped<MonthlyLimitResetJob>();
-
     // ══════════════════════════════════════════════════════════════
     // CONTROLLERS & SWAGGER
     // ══════════════════════════════════════════════════════════════
@@ -373,7 +411,6 @@ try
             Description = "Kart ve Üye İşyeri Yönetim Sistemi - LKS, Fraud, Takas, İtiraz, Kampanya, BKM Switch, HSM"
         });
 
-        // JWT için Swagger ayarı
         c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
         {
             Name = "Authorization",
@@ -408,7 +445,7 @@ try
     Log.Information("Application built successfully");
 
     // ══════════════════════════════════════════════════════════════
-    // SERILOG REQUEST LOGGING (En önemli middleware)
+    // SERILOG REQUEST LOGGING
     // ══════════════════════════════════════════════════════════════
     app.UseSerilogRequestLogging(options =>
     {
@@ -433,13 +470,11 @@ try
     // CUSTOM MIDDLEWARES
     // ══════════════════════════════════════════════════════════════
     app.UseMiddleware<CorrelationIdMiddleware>();
-    // app.UseMiddleware<RequestResponseLoggingMiddleware>(); // Opsiyonel - çok detaylı loglama
 
     // ══════════════════════════════════════════════════════════════
     // GLOBAL EXCEPTION HANDLER
     // ══════════════════════════════════════════════════════════════
     app.UseGlobalExceptionHandler();
-
 
     // ══════════════════════════════════════════════════════════════
     // USE RATE LIMITER
@@ -456,9 +491,6 @@ try
         {
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "Card Merchant System API v1");
         });
-
-        using var scope = app.Services.CreateScope();
-        //await MigrationHelper.MigrateAllDatabasesAsync(scope.ServiceProvider);
     }
 
     app.UseHttpsRedirection();
