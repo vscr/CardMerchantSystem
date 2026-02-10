@@ -637,17 +637,27 @@ CardMerchantSystem/
 
 ## 🔐 Güvenlik & Yetkilendirme
 
-### Roller
+### Authentication (Dual-Mode)
 
-| Rol | Açıklama |
-|-----|----------|
-| **Admin** | Tüm yetkiler |
-| **CardOperator** | Kart operasyonları |
-| **MerchantOperator** | Üye işyeri operasyonları |
-| **FinanceOperator** | Finans işlemleri |
-| **ComplianceOfficer** | Yasal raporlama + Audit erişimi |
-| **CallCenterAgent** | Çağrı merkezi |
-| **Viewer** | Sadece görüntüleme |
+| Mod | Açıklama | Config |
+|-----|----------|--------|
+| **Local** | BCrypt + HS256 JWT (kendi DB) | `"AuthProvider": "Local"` |
+| **Keycloak** | RS256 JWT + OIDC (Keycloak 26) | `"AuthProvider": "Keycloak"` |
+
+Keycloak modunda:
+- Token validation → Keycloak RS256 public key
+- Kullanıcı CRUD → Keycloak Admin REST API
+- Claim mapping → `KeycloakClaimsTransformer` (realm_access.roles → ClaimTypes.Role)
+- Mevcut `[Authorize]` ve Policy'ler değişmeden çalışır
+
+### Keycloak Erişim
+
+| Servis | URL | Kullanıcı |
+|--------|-----|-----------|
+| Keycloak Admin Console | `http://localhost:8080` | admin / admin |
+| Realm | cardmerchant | - |
+| API Client | cardmerchant-api (bearer-only) | - |
+| Web Client | cardmerchant-web (public) | - |
 
 ### Audit API Erişimi
 
