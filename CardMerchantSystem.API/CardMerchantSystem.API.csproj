@@ -70,6 +70,9 @@
 		<ProjectReference Include="..\Fee.Application\Fee.Application.csproj" />
 		<ProjectReference Include="..\Fee.Domain\Fee.Domain.csproj" />
 		<ProjectReference Include="..\Fee.Infrastructure\Fee.Infrastructure.csproj" />
+		<ProjectReference Include="..\Fraud.Application\Fraud.Application.csproj" />
+		<ProjectReference Include="..\Fraud.Domain\Fraud.Domain.csproj" />
+		<ProjectReference Include="..\Fraud.Infrastructure\Fraud.Infrastructure.csproj" />
 		<ProjectReference Include="..\HSM.Application\HSM.Application.csproj" />
 		<ProjectReference Include="..\HSM.Domain\HSM.Domain.csproj" />
 		<ProjectReference Include="..\HSM.Infrastructure\HSM.Infrastructure.csproj" />

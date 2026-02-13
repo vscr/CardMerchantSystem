@@ -28,6 +28,8 @@ using EarlyBlockResolution.Application;
 using EarlyBlockResolution.Infrastructure;
 using Fee.Application;
 using Fee.Infrastructure;
+using Fraud.Application;
+using Fraud.Infrastructure;
 using Hangfire;
 using Hangfire.SqlServer;
 using HSM.Application;
@@ -206,6 +208,10 @@ try
             policy.RequireRole(
                 RoleNames.Admin, RoleNames.CardOperator, RoleNames.MerchantOperator,
                 RoleNames.FinanceOperator, RoleNames.CallCenterAgent));
+
+        // Fraud Yönetimi
+        options.AddPolicy(Policies.FraudManagement, policy =>
+         policy.RequireRole(RoleNames.Admin, RoleNames.ComplianceOfficer, RoleNames.CardOperator));
     });
 
     // ══════════════════════════════════════════════════════════════
@@ -326,6 +332,10 @@ try
     // WorkOrder Module
     builder.Services.AddWorkOrderApplication();
     builder.Services.AddWorkOrderInfrastructure(connectionString);
+
+    //Fraud Module
+    builder.Services.AddFraudApplication();
+    builder.Services.AddFraudInfrastructure(connectionString);
 
     // Resilience Services
     builder.Services.AddResilienceServices(builder.Configuration);

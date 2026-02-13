@@ -16,6 +16,7 @@ public static class Policies
     public const string ComplianceManagement = "ComplianceManagement";
     public const string CallCenterAccess = "CallCenterAccess";
     public const string WorkOrderManagement = "WorkOrderManagement";
+    public const string FraudManagement = "FraudManagement";
 }
 
 /// <summary>
@@ -38,4 +39,5 @@ public static class RoleNames
     public const string AdminOrComplianceOfficer = $"{Admin},{ComplianceOfficer}";
     public const string CardTeam = $"{Admin},{CardOperator},{CallCenterAgent}";
     public const string FinanceTeam = $"{Admin},{FinanceOperator},{ComplianceOfficer}";
+    public const string FraudTeam = $"{Admin},{ComplianceOfficer},{CardOperator}";
 }
