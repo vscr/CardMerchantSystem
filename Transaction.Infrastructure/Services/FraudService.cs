@@ -1,78 +1,130 @@
-﻿using Transaction.Domain.Enums;
+﻿using Fraud.Application.Services;
+using Transaction.Domain.Enums;
 using Transaction.Domain.Services;
 using CardMerchantSystem.Shared.Kernel;
+using Microsoft.Extensions.Logging;
+using FraudModuleRequest = Fraud.Application.Models.FraudCheckRequest;
 
 namespace Transaction.Infrastructure.Services;
 
 /// <summary>
-/// Fraud kontrol servisi
-/// Basit kural tabanlı fraud detection
+/// Transaction modülü ↔ Fraud modülü köprüsü.
+/// 
+/// Öncesi: Hardcoded kurallar (tutar > 50K, gece saati vb.)
+/// Şimdi: Gerçek Fraud Engine'e delege ediyor.
+/// 
+/// Akış:
+/// ProcessTransactionCommand → IFraudService.CheckFraudAsync()
+///   → IFraudEngine.CheckOnlineAsync()
+///     → Senaryo yükleme → Kural evaluate → HitScenario → Alert
+///   ← FraudCheckResult (Status, Score, ResponseCode)
+/// ← Transaction approve/decline
 /// </summary>
 public class FraudService : IFraudService
 {
-    // Fraud kuralları için eşik değerleri
-    private const decimal HIGH_AMOUNT_THRESHOLD = 50000m;
-    private const int MAX_TRANSACTIONS_PER_HOUR = 10;
-    private const int MAX_FRAUD_SCORE = 100;
-    private const int FRAUD_REJECT_THRESHOLD = 80;
-    private const int FRAUD_REVIEW_THRESHOLD = 50;
+    private readonly IFraudEngine _fraudEngine;
+    private readonly ILogger<FraudService> _logger;
 
-    public Task<Result<FraudCheckResponse>> CheckFraudAsync(FraudCheckRequest request, CancellationToken cancellationToken = default)
+    public FraudService(IFraudEngine fraudEngine, ILogger<FraudService> logger)
     {
-        var score = 0;
-        var reasons = new List<string>();
+        _fraudEngine = fraudEngine;
+        _logger = logger;
+    }
 
-        // Kural 1: Yüksek tutar kontrolü
-        if (request.Amount > HIGH_AMOUNT_THRESHOLD)
+    public async Task<Result<FraudCheckResponse>> CheckFraudAsync(
+        FraudCheckRequest request, CancellationToken cancellationToken = default)
+    {
+        try
         {
-            score += 30;
-            reasons.Add($"Yüksek işlem tutarı: {request.Amount:N2} TRY");
-        }
+            // 1. Transaction request → Fraud Engine request mapping
+            var engineRequest = MapToEngineRequest(request);
 
-        // Kural 2: Gece yarısı işlem kontrolü (00:00 - 05:00)
-        var hour = request.TransactionTime.Hour;
-        if (hour >= 0 && hour < 5)
-        {
-            score += 20;
-            reasons.Add("Gece saatlerinde işlem");
-        }
+            // 2. Fraud Engine çağır (Online — max 100ms hedef)
+            var engineResult = await _fraudEngine.CheckOnlineAsync(engineRequest, cancellationToken);
 
-        // Kural 3: Çok yüksek tutar (100K+)
-        if (request.Amount > 100000m)
-        {
-            score += 40;
-            reasons.Add("Çok yüksek işlem tutarı");
-        }
+            // 3. Fraud Engine result → Transaction response mapping
+            var response = MapToResponse(engineResult);
 
-        // Kural 4: Round amount kontrolü (tam sayı)
-        if (request.Amount == Math.Floor(request.Amount) && request.Amount > 1000)
-        {
-            score += 10;
-            reasons.Add("Yuvarlak tutar");
-        }
+            _logger.LogInformation(
+                "Fraud check tamamlandı: Card={Card}, Score={Score}, Result={Result}, Süre={Ms}ms",
+                request.CardNumberMasked, response.Score, response.Result.Name,
+                engineResult.TotalExecutionTimeMs);
 
-        // Sonucu belirle
-        FraudCheckResult result;
-        if (score >= FRAUD_REJECT_THRESHOLD)
-        {
-            result = FraudCheckResult.Reject;
+            return Result.Success(response);
         }
-        else if (score >= FRAUD_REVIEW_THRESHOLD)
+        catch (Exception ex)
         {
-            result = FraudCheckResult.Review;
-        }
-        else
-        {
-            result = FraudCheckResult.Pass;
-        }
+            _logger.LogError(ex,
+                "Fraud check hatası: Card={Card}, Amount={Amount}",
+                request.CardNumberMasked, request.Amount);
 
-        var response = new FraudCheckResponse
+            // Fraud engine hata verirse işlemi geçir (fail-open)
+            // Production'da fail-close da tercih edilebilir
+            return Result.Success(new FraudCheckResponse
+            {
+                Result = FraudCheckResult.Pass,
+                Score = 0,
+                Reasons = new List<string> { "Fraud servisi geçici olarak kullanılamıyor" }
+            });
+        }
+    }
+
+    /// <summary>
+    /// Transaction modülünün request'ini Fraud Engine formatına çevirir.
+    /// PayGuard'daki TransactionInputParameters mapping karşılığı.
+    /// </summary>
+    private static FraudModuleRequest MapToEngineRequest(FraudCheckRequest request)
+    {
+        return new FraudModuleRequest
         {
-            Result = result,
-            Score = Math.Min(score, MAX_FRAUD_SCORE),
-            Reasons = reasons
+            TransactionId = Guid.NewGuid(),
+            TransactionDate = request.TransactionTime,
+            TransactionHour = request.TransactionTime.Hour,
+
+            // Tutar
+            OriginalAmount = request.Amount,
+            OriginalCurrencyCode = "TRY",
+
+            // Kart
+            MaskedCardNo = request.CardNumberMasked,
+
+            // Üye İşyeri
+            MerchantId = request.MerchantCode,
+            TerminalId = request.TerminalCode,
+
+            // POS
+            ChannelType = request.DeviceId != null ? "ECOM" : "POS",
+        };
+    }
+
+    /// <summary>
+    /// Fraud Engine sonucunu Transaction modülünün anlayacağı formata çevirir.
+    /// 
+    /// Mapping:
+    ///   FraudStatus.Clean       → FraudCheckResult.Pass
+    ///   FraudStatus.Suspicious  → FraudCheckResult.Review (Score < 80)
+    ///   FraudStatus.Fraudulent  → FraudCheckResult.Reject (Score >= 80)
+    /// </summary>
+    private static FraudCheckResponse MapToResponse(Fraud.Application.Models.FraudCheckResult engineResult)
+    {
+        var result = engineResult.Status switch
+        {
+            Fraud.Domain.Enums.FraudStatus.Clean => FraudCheckResult.Pass,
+            Fraud.Domain.Enums.FraudStatus.Suspicious => FraudCheckResult.Review,
+            Fraud.Domain.Enums.FraudStatus.Fraudulent => FraudCheckResult.Reject,
+            Fraud.Domain.Enums.FraudStatus.SimulationHit => FraudCheckResult.Pass, // Simülasyon → geçir
+            _ => FraudCheckResult.Pass
         };
 
-        return Task.FromResult(Result.Success(response));
+        var reasons = engineResult.HitScenarios
+            .Select(h => $"[{h.ScenarioName}] Score:{h.Score} Code:{h.FraudResponseCode}{(h.IsSimulation ? " (SIM)" : "")}")
+            .ToList();
+
+        return new FraudCheckResponse
+        {
+            Result = result,
+            Score = engineResult.TotalScore,
+            Reasons = reasons
+        };
     }
 }

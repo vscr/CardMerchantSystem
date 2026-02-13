@@ -16,6 +16,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\CardMerchantSystem.Shared\CardMerchantSystem.Shared.csproj" />
+		<ProjectReference Include="..\Fraud.Application\Fraud.Application.csproj" />
 		<ProjectReference Include="..\Transaction.Application\Transaction.Application.csproj" />
 		<ProjectReference Include="..\Transaction.Domain\Transaction.Domain.csproj" />
 	</ItemGroup>
