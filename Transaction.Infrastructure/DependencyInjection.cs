@@ -39,6 +39,7 @@ public static class DependencyInjection
 
         // === EF Core Repositories (Write + Complex Queries) ===
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<ICardLimitDefinitionRepository, CardLimitDefinitionRepository>();
 
         // === Dapper Repositories (High-Performance Read) ===
         services.AddSingleton<IDapperContext, DapperContext>();
@@ -48,6 +49,7 @@ public static class DependencyInjection
         // Services
         services.AddScoped<ILimitService, LimitService>();
         services.AddScoped<IFraudService, FraudService>();
+
 
         return services;
     }

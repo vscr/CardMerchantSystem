@@ -6,7 +6,7 @@ using Transaction.Application.Commands;
 using Transaction.Application.DTOs;
 using Transaction.Application.Queries;
 
-namespace CardMerchantSystem.API.Controllers;
+namespace CardMerchantSystem.API.Controllers.Transaction;
 
 [Authorize]
 public class TransactionsController : ApiControllerBase

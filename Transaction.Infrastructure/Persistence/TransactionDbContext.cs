@@ -14,6 +14,7 @@ public class TransactionDbContext : DbContext
     }
 
     public DbSet<TransactionAggregate> Transactions => Set<TransactionAggregate>();
+    public DbSet<CardLimitDefinition> CardLimitDefinitions => Set<CardLimitDefinition>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

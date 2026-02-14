@@ -23,6 +23,7 @@ public interface ICardApplicationRepository
     bool sortDescending = false,
     CancellationToken cancellationToken = default);
 
+    Task<CardApplication?> GetByMaskedCardNoAsync(string maskedCardNo, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CardApplication>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<CardApplication?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 

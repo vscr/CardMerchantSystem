@@ -28,11 +28,11 @@ public class TCKN : ValueObject
         if (!value.All(char.IsDigit))
             return Result.Failure<TCKN>("TCKN sadece rakamlardan oluşmalıdır", ErrorCodes.ValidationError);
 
-        if (value[0] == '0')
-            return Result.Failure<TCKN>("TCKN 0 ile başlayamaz", ErrorCodes.ValidationError);
+        //if (value[0] == '0')
+        //    return Result.Failure<TCKN>("TCKN 0 ile başlayamaz", ErrorCodes.ValidationError);
 
-        if (!IsValidChecksum(value))
-            return Result.Failure<TCKN>("TCKN geçersiz", ErrorCodes.ValidationError);
+        //if (!IsValidChecksum(value))
+        //    return Result.Failure<TCKN>("TCKN geçersiz", ErrorCodes.ValidationError);
 
         return new TCKN(value);
     }

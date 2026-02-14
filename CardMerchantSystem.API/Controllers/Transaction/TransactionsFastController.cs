@@ -5,7 +5,7 @@ using System.Diagnostics;
 using Transaction.Application.DTOs;
 using Transaction.Infrastructure.Dapper;
 
-namespace CardMerchantSystem.API.Controllers;
+namespace CardMerchantSystem.API.Controllers.Transaction;
 
 /// <summary>
 /// Dapper tabanlı yüksek performanslı Transaction endpoint'leri

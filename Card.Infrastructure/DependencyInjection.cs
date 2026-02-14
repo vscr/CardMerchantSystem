@@ -1,7 +1,9 @@
 ﻿using Card.Domain.Repositories;
 using Card.Infrastructure.Persistence;
 using Card.Infrastructure.Repositories;
+using Card.Infrastructure.Services;
 using CardMerchantSystem.Shared.Audit.Interceptors;
+using CardMerchantSystem.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,6 +29,8 @@ public static class DependencyInjection
 
         // Repositories
         services.AddScoped<ICardApplicationRepository, CardApplicationRepository>();
+
+        services.AddScoped<ICardLimitProvider, CardLimitProvider>();
 
         return services;
     }

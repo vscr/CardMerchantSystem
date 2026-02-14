@@ -5,7 +5,7 @@ using CardMerchantSystem.Shared.Kernel.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CardMerchantSystem.API.Controllers;
+namespace CardMerchantSystem.API.Controllers.SystemManagement;
 
 public class MenusController : ApiControllerBase
 {

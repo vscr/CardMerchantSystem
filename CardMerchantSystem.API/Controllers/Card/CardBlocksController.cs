@@ -5,7 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CardMerchantSystem.API.Controllers;
+namespace CardMerchantSystem.API.Controllers.Card;
 
 [Authorize]
 public class CardBlocksController : ApiControllerBase

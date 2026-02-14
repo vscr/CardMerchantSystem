@@ -15,6 +15,12 @@ public class CardApplicationRepository : ICardApplicationRepository
     {
         _context = context;
     }
+    public async Task<CardApplication?> GetByMaskedCardNoAsync(string maskedCardNo, CancellationToken cancellationToken = default)
+    => await _context.CardApplications
+        .AsNoTracking()
+        .Where(x => x.CardNumberMasked == maskedCardNo && x.Status == CardApplicationStatus.Approved)
+        .OrderByDescending(x => x.CreatedAt)
+        .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<(IReadOnlyList<CardApplication> Items, int TotalCount)> GetPagedAsync(
     int pageNumber,

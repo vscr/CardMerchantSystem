@@ -6,7 +6,7 @@ using WorkOrder.Application.Commands;
 using WorkOrder.Application.DTOs;
 using WorkOrder.Application.Queries;
 
-namespace CardMerchantSystem.API.Controllers;
+namespace CardMerchantSystem.API.Controllers.WorkOrder;
 
 [Authorize(Policy = Policies.WorkOrderManagement)]
 public class WorkOrdersController : ApiControllerBase
