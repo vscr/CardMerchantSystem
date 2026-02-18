@@ -19,6 +19,7 @@ using CardMerchantSystem.API.Services;
 using CardMerchantSystem.Shared.Audit;
 using CardMerchantSystem.Shared.Data;
 using CardMerchantSystem.Shared.Data.Dapper.Extensions;
+using CardMerchantSystem.Shared.Idempotency;
 using CardMerchantSystem.Shared.Resilience;
 using Courier.Application;
 using Courier.Infrastructure;
@@ -343,6 +344,11 @@ try
     // Rate Limiting
     builder.Services.AddRateLimitingServices(builder.Configuration);
 
+    // Idempotency Services
+    builder.Services.Configure<IdempotencyOptions>(
+    builder.Configuration.GetSection(IdempotencyOptions.SectionName));
+    builder.Services.AddScoped<IIdempotencyContext, IdempotencyContext>();
+
     Log.Information("All modules registered successfully");
 
     // ══════════════════════════════════════════════════════════════
@@ -442,8 +448,13 @@ try
     // ══════════════════════════════════════════════════════════════
     // CUSTOM MIDDLEWARES
     // ══════════════════════════════════════════════════════════════
+
     app.UseMiddleware<CorrelationIdMiddleware>();
     // app.UseMiddleware<RequestResponseLoggingMiddleware>(); // Opsiyonel - çok detaylı loglama
+
+    // Idempotency Middleware - Sadece POST/PUT isteklerinde çalışır, Idempotency-Key header'ını okur ve context'e enjekte eder
+    app.UseMiddleware<IdempotencyMiddleware>();
+
 
     // ══════════════════════════════════════════════════════════════
     // GLOBAL EXCEPTION HANDLER

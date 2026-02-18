@@ -1,4 +1,5 @@
 ﻿using CardMerchantSystem.Shared.Audit.Interceptors;
+using CardMerchantSystem.Shared.Idempotency;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
@@ -6,6 +7,7 @@ using Transaction.Domain.Repositories;
 using Transaction.Domain.Services;
 using Transaction.Infrastructure.Configurations;
 using Transaction.Infrastructure.Dapper;
+using Transaction.Infrastructure.Idempotency;
 using Transaction.Infrastructure.Persistence;
 using Transaction.Infrastructure.Repositories;
 using Transaction.Infrastructure.Services;
@@ -49,6 +51,8 @@ public static class DependencyInjection
         // Services
         services.AddScoped<ILimitService, LimitService>();
         services.AddScoped<IFraudService, FraudService>();
+
+        services.AddScoped<IIdempotencyStore, IdempotencyStore>();
 
 
         return services;

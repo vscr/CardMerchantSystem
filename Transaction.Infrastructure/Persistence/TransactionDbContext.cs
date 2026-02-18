@@ -1,4 +1,5 @@
 ﻿using CardMerchantSystem.Shared.Extensions;
+using CardMerchantSystem.Shared.Idempotency;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Transaction.Domain.Entities;
@@ -15,6 +16,7 @@ public class TransactionDbContext : DbContext
 
     public DbSet<TransactionAggregate> Transactions => Set<TransactionAggregate>();
     public DbSet<CardLimitDefinition> CardLimitDefinitions => Set<CardLimitDefinition>();
+    public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
