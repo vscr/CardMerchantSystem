@@ -13,6 +13,7 @@ using CardMerchantSystem.API.Auth.Constants;
 using CardMerchantSystem.API.Auth.Persistence;
 using CardMerchantSystem.API.Auth.Services;
 using CardMerchantSystem.API.Configuration;
+using CardMerchantSystem.API.HealthChecks;
 using CardMerchantSystem.API.Jobs;
 using CardMerchantSystem.API.Middleware;
 using CardMerchantSystem.API.Services;
@@ -349,6 +350,8 @@ try
     builder.Configuration.GetSection(IdempotencyOptions.SectionName));
     builder.Services.AddScoped<IIdempotencyContext, IdempotencyContext>();
 
+    builder.Services.AddHealthCheckServices(builder.Configuration);
+
     Log.Information("All modules registered successfully");
 
     // ══════════════════════════════════════════════════════════════
@@ -512,6 +515,8 @@ try
         "monthly-limit-reset",
         job => job.ExecuteAsync(),
         "5 0 1 * *");
+
+    app.MapHealthCheckEndpoints();
 
     app.MapControllers();
 
