@@ -35,14 +35,23 @@ public class CardFraudProfileRepository : ICardFraudProfileRepository
         await _context.SaveChangesAsync(ct);
     }
 
+    // CardFraudProfileRepository.cs — UPSERT pattern
     public async Task<CardFraudProfile> GetOrCreateAsync(string maskedCardNo, CancellationToken ct = default)
     {
         var profile = await GetByCardNoAsync(maskedCardNo, ct);
         if (profile != null) return profile;
 
-        profile = new CardFraudProfile(maskedCardNo);
-        await _context.CardFraudProfiles.AddAsync(profile, ct);
-        await _context.SaveChangesAsync(ct);
-        return profile;
+        try
+        {
+            profile = new CardFraudProfile(maskedCardNo);
+            await _context.CardFraudProfiles.AddAsync(profile, ct);
+            await _context.SaveChangesAsync(ct);
+            return profile;
+        }
+        catch (DbUpdateException) // UNIQUE constraint violation — başka thread oluşturmuş
+        {
+            // Retry: artık kesinlikle var
+            return (await GetByCardNoAsync(maskedCardNo, ct))!;
+        }
     }
 }

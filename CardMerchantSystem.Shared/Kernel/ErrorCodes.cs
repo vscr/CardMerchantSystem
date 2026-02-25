@@ -41,4 +41,5 @@ public static class ErrorCodes
     public const string ValidationError = "VALIDATION_ERROR";
     public const string ConcurrencyError = "CONCURRENCY_ERROR";
     public const string UnauthorizedAccess = "UNAUTHORIZED_ACCESS";
+    public const string SystemError = "SYSTEM_ERROR";
 }

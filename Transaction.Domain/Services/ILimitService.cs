@@ -47,4 +47,9 @@ public interface ILimitService
     /// Aylık limitleri sıfırlar
     /// </summary>
     Task<Result> ResetMonthlyLimitsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomic limit kontrol + rezerve (Lua script ile tek operasyon)
+    /// </summary>
+    Task<Result> CheckAndReserveLimitAsync(string cardNumber, decimal amount, string transactionId, CancellationToken cancellationToken = default);
 }

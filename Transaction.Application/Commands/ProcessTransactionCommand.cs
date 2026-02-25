@@ -163,10 +163,23 @@ public class ProcessTransactionCommandHandler
         }
 
         // 7. Limit kullanımını onayla
+        // ESKİ (2 ayrı çağrı — race condition):
+        // var limitResult = await _limitService.CheckLimitAsync(cardNo, amount);
+        // var reserveResult = await _limitService.ReserveLimitAsync(cardNo, amount, txId);
+
+        // YENİ (tek atomic çağrı):
         if (transactionType.DecreasesLimit)
         {
-            await _limitService.CommitLimitAsync(
+            var limitResult = await _limitService.CheckAndReserveLimitAsync(
                 dto.CardNumberMasked, dto.Amount, transaction.Id.ToString(), cancellationToken);
+
+            if (limitResult.IsFailure)
+            {
+                transaction.Decline(DeclineReason.InsufficientLimit, limitResult.Error);
+                await _repository.AddAsync(transaction, cancellationToken);
+                await _repository.SaveChangesAsync(cancellationToken);
+                return CreateResult(transaction, "51", limitResult.Error!);
+            }
         }
 
         // 8. Limit iade (iade/iptal işlemleri için)
