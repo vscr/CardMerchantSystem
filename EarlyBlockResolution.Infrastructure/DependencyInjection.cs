@@ -1,6 +1,8 @@
-﻿using EarlyBlockResolution.Domain.Repositories;
+﻿using CardMerchantSystem.Shared.Services;
+using EarlyBlockResolution.Domain.Repositories;
 using EarlyBlockResolution.Infrastructure.Persistence;
 using EarlyBlockResolution.Infrastructure.Repositories;
+using EarlyBlockResolution.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +19,8 @@ public static class DependencyInjection
         services.AddScoped<IBlockRuleRepository, BlockRuleRepository>();
         services.AddScoped<IFraudAlertRepository, FraudAlertRepository>();
         services.AddScoped<ICardBlockRepository, CardBlockRepository>();
+
+        services.AddScoped<ICardBlockCheckService, CardBlockCheckService>();
 
         return services;
     }

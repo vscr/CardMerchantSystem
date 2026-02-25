@@ -1,14 +1,16 @@
-﻿using System.Data;
-using CardMerchantSystem.Shared.Audit.Interceptors;
+﻿using CardMerchantSystem.Shared.Audit.Interceptors;
 using CardMerchantSystem.Shared.Data;
 using CardMerchantSystem.Shared.Data.Extensions;
+using CardMerchantSystem.Shared.Services;
 using Merchant.Domain.Repositories;
 using Merchant.Infrastructure.Persistence;
 using Merchant.Infrastructure.Repositories;
+using Merchant.Infrastructure.Services;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using System.Data;
 
 namespace Merchant.Infrastructure;
 
@@ -58,6 +60,7 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped<IMerchantRepository, MerchantRepository>();
         services.AddScoped<IMerchantDapperRepository, MerchantDapperRepository>();
+        services.AddScoped<IMerchantValidationService, MerchantValidationService>();
 
         return services;
     }

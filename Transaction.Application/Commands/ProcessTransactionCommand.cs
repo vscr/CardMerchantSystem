@@ -1,4 +1,5 @@
 ﻿using CardMerchantSystem.Shared.Kernel;
+using CardMerchantSystem.Shared.Services;
 using MediatR;
 using Transaction.Application.DTOs;
 using Transaction.Domain.Entities;
@@ -18,16 +19,22 @@ public class ProcessTransactionCommandHandler
 {
     private readonly ITransactionRepository _repository;
     private readonly ILimitService _limitService;
-    private readonly IFraudService _fraudService;
+    private readonly IFraudService _fraudService; 
+    private readonly IMerchantValidationService _merchantValidationService;  
+    private readonly ICardBlockCheckService _cardBlockCheckService;
 
     public ProcessTransactionCommandHandler(
         ITransactionRepository repository,
         ILimitService limitService,
-        IFraudService fraudService)
+        IFraudService fraudService,
+        IMerchantValidationService merchantValidationService,
+        ICardBlockCheckService cardBlockCheckService)
     {
         _repository = repository;
         _limitService = limitService;
         _fraudService = fraudService;
+        _merchantValidationService = merchantValidationService;
+        _cardBlockCheckService = cardBlockCheckService;
     }
 
     public async Task<Result<TransactionResultDto>> Handle(
@@ -62,6 +69,31 @@ public class ProcessTransactionCommandHandler
             return Result.Failure<TransactionResultDto>(transactionResult.Error!, transactionResult.ErrorCode);
 
         var transaction = transactionResult.Value!;
+
+        var merchantValid = await _merchantValidationService.ValidateAsync(
+            dto.MerchantId, dto.TerminalId, cancellationToken);
+
+        if (merchantValid.IsFailure)
+        {
+            transaction.Decline(DeclineReason.InvalidMerchant, merchantValid.Error);
+            await _repository.AddAsync(transaction, cancellationToken);
+            await _repository.SaveChangesAsync(cancellationToken);
+
+            return CreateResult(transaction, "03", merchantValid.Error!);
+        }
+
+        var isBlocked = await _cardBlockCheckService.IsBlockedAsync(
+             dto.CardNumberMasked, cancellationToken);
+
+        if (isBlocked)
+        {
+            transaction.Decline(DeclineReason.RestrictedCard, "Kart blokeli — işlem yapılamaz");
+            await _repository.AddAsync(transaction, cancellationToken);
+            await _repository.SaveChangesAsync(cancellationToken);
+
+            return CreateResult(transaction, "62", "Kart blokeli — işlem yapılamaz");
+        }
+
 
         // 4. Fraud kontrolü
         var fraudRequest = new FraudCheckRequest

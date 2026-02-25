@@ -15,6 +15,13 @@ public class CardBlockRepository : ICardBlockRepository
         _context = context;
     }
 
+    public async Task<IReadOnlyList<CardBlock>> GetActiveBlocksByCardMaskedAsync(string cardNumberMasked, CancellationToken cancellationToken = default)
+    => await _context.CardBlocks
+        .AsNoTracking()
+       .Where(x => x.CardNumberMasked == cardNumberMasked
+         && (x.Status == BlockStatus.Active || x.Status == BlockStatus.PendingVerification))
+        .ToListAsync(cancellationToken);
+
     public async Task<CardBlock?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.CardBlocks

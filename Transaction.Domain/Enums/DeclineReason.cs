@@ -19,6 +19,8 @@ public class DeclineReason : Enumeration
     public static readonly DeclineReason MonthlyLimitExceeded = new(9, nameof(MonthlyLimitExceeded), "Aylık Limit Aşıldı");
     public static readonly DeclineReason TransactionNotPermitted = new(10, nameof(TransactionNotPermitted), "İşlem İzni Yok");
     public static readonly DeclineReason SystemError = new(11, nameof(SystemError), "Sistem Hatası");
+    public static readonly DeclineReason RestrictedCard = new(4, nameof(RestrictedCard), "Kısıtlı Kart");
+
 
     private DeclineReason(int id, string name, string displayName)
         : base(id, name, displayName)

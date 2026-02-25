@@ -14,9 +14,9 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 | **Cache** | Redis (LKS, Fraud, Idempotency) |
 | **Resilience** | Polly + Rate Limiting |
 | **Performance** | Dapper + Snapshot Isolation — 150 TPS load tested |
-| **Monitoring** | Serilog + Elasticsearch + Kibana |
+| **Monitoring** | Serilog + Elasticsearch + Kibana + Health Checks |
 | **Auth** | Dual-mode (Keycloak RS256 / Local JWT HS256), 7 rol |
-| **Versiyon** | 1.8.0 |
+| **Versiyon** | 1.9.0 |
 
 ---
 
@@ -42,7 +42,7 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 | **BulkCardPrint** | Toplu kart basım (Bileşim, Austria) | CardApproved event dinler |
 | **RegulatoryReporting** | Yasal raporlama (BDDK, TCMB) | Compliance |
 | **Courier** | Kurye entegrasyonu (Kuryenet) | Shipment tracking |
-| **EarlyBlockResolution** | Erken bloke çözüm | — |
+| **EarlyBlockResolution** | Erken bloke çözüm | OTP doğrulama, bloke kontrolü |
 | **WorkOrder** | İş emri yönetimi | Beko, Ingenico, Teknoser |
 
 ### Planlanmış (1)
@@ -50,6 +50,86 @@ Bankacılık sektörü için **production-ready** Kart ve Üye İşyeri Yönetim
 | Modül | Açıklama |
 |-------|----------|
 | **InstantCardPrint** | Evolis Primacy şube içi basım |
+
+---
+
+## İşlem Akışı (Uçtan Uca)
+
+```
+POS/Client
+    │  Idempotency-Key: T1017506:260214001
+    ▼
+ProcessTransactionCommand
+    │
+    ├─ 1. IdempotencyBehavior → key kontrol (Redis SET NX)
+    ├─ 2. Validation → TransactionType, Amount
+    ├─ 3. TransactionAggregate.Create
+    ├─ 4. Merchant/Terminal Aktiflik Kontrolü → "03"
+    │     └─ IMerchantValidationService (cross-module)
+    ├─ 5. Blokeli Kart Kontrolü → "62"
+    │     └─ ICardBlockCheckService (cross-module)
+    ├─ 6. FraudEngine → Senaryo tarama (< 100ms hedef)
+    │     ├─ Clean (score < 80) → devam
+    │     ├─ Suspicious → devam (Review)
+    │     └─ Fraudulent (score ≥ 80) → REJECT "05"
+    ├─ 7. LimitService → Limit kontrol (Redis + DB)
+    │     ├─ Tek işlem limiti
+    │     ├─ Günlük limit
+    │     └─ Aylık limit → aşarsa REJECT "51"
+    ├─ 8. Limit Reserve → Redis INCR
+    ├─ 9. Approve → AuthorizationCode üret
+    ├─ 10. Limit Commit
+    ├─ 11. Save → DB + Domain Events
+    │      ├─ TransactionCompletedIntegrationEvent
+    │      │     ├─ → Campaign (kazanım hesapla)
+    │      │     ├─ → Fee (komisyon hesapla)
+    │      │     └─ → Accounting (muhasebe kaydı)
+    │      └─ FraudDetectedIntegrationEvent (fraud hit varsa)
+    │            └─ → Dispute (itiraz kaydı)
+    └─ 12. Idempotency Complete → sonuç cache'le (24h)
+```
+
+### Response Code Tablosu
+
+| Code | Anlam | Tetikleyen Adım |
+|------|-------|-----------------|
+| **00** | Onay | Normal işlem |
+| **03** | Geçersiz üye işyeri | Merchant/Terminal pasif (Adım 4) |
+| **05** | Fraud red | FraudEngine score ≥ 80 (Adım 6) |
+| **14** | Geçersiz kart | Kart bulunamadı |
+| **51** | Yetersiz limit | Günlük/Aylık limit aşımı (Adım 7) |
+| **62** | Kısıtlı kart | Blokeli kart (Adım 5) |
+| **91** | Sistem hatası | İç hata |
+
+---
+
+## Yaşam Döngüsü
+
+Sistem uçtan uca 7 fazdan oluşur:
+
+```
+Faz 0: Auth (Login + Health Check)
+  ↓
+Faz 1: Merchant Onboarding
+       Merchant Kaydı → Onay → Aktivasyon → Terminal Ekle → Terminal Aktive
+  ↓
+Faz 2: Kart Yaşam Döngüsü
+       Başvuru → İnceleme → Onay → Basım → Basıldı → Teslimat → Teslim (9 aşama)
+  ↓
+Faz 3: İşlem Akışı
+       Transaction → Merchant Kontrol → Bloke Kontrol → Fraud → Limit → Approve/Decline
+  ↓
+Faz 4: İşlem Sonrası
+       İade / İptal / İtiraz / Fraud Alert Çözümleme
+  ↓
+Faz 5: Gün Sonu
+       Settlement / Mutabakat / Limit Reset / Raporlama
+  ↓
+Faz 6: Operasyonel
+       Kart Bloke / Bloke Çözüm / Limit Güncelleme / Kampanya
+```
+
+> Detaylı akış ve Postman koleksiyonu: `docs/CardMerchantSystem-Lifecycle.md`
 
 ---
 
@@ -98,14 +178,10 @@ Transaction → FraudEngine.CheckOnlineAsync()
 
 Bankacılık standardına uygun, Redis + DB hybrid idempotency mekanizması.
 
-### Neden Gerekli
-
-POS terminalleri ağ kesintisinde aynı işlemi tekrar gönderir. Idempotency key ile ilk sonuç cache'den döner, mükerrer işlem engellenir.
-
 ### Mekanizma
 
 ```
-Client → POST /api/Transactions/process
+Client → POST /api/Transactions
          Header: Idempotency-Key: {terminal}:{rrn}
 
 1. Redis GET → key var mı?
@@ -121,8 +197,8 @@ Client → POST /api/Transactions/process
 | Aynı key + aynı body | Cache'den döner (işlem yapılmaz) |
 | Aynı key + farklı body | 409 Conflict |
 | Processing sırasında retry | "İşlem işleniyor" hatası |
-| 5xx hata | Lock serbest bırakılır (retry yapılabilsin) |
-| 4xx hata | Hata cache'lenir (aynı hatalı veri → aynı hata) |
+| 5xx hata | Lock serbest bırakılır |
+| 4xx hata | Hata cache'lenir |
 
 ---
 
@@ -140,53 +216,41 @@ Dinamik, panelden yönetilebilir limit yapısı. Redis cache + DB hybrid.
 5. Fallback hardcoded (10.000 / 50.000)
 ```
 
-### API Endpoints
+---
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| GET | `/api/CardLimits` | Tüm limit tanımları |
-| GET | `/api/CardLimits/card/{cardNo}/usage` | Kart kullanım durumu |
-| POST | `/api/CardLimits` | Yeni limit tanımı |
-| PUT | `/api/CardLimits/{id}` | Limit güncelle |
-| PATCH | `/api/CardLimits/{id}/toggle` | Aktif/pasif |
-| POST | `/api/CardLimits/invalidate-cache` | Cache temizle |
+## Health Checks
+
+Production-ready Kubernetes health check altyapısı.
+
+### Endpoints
+
+| Endpoint | Amacı | Kubernetes |
+|----------|-------|------------|
+| `/health` | Tüm kontroller (detaylı JSON) | Monitoring |
+| `/health/ready` | Sadece kritik servisler (DB, Redis) | Readiness Probe |
+| `/health/live` | Basit alive check | Liveness Probe |
+
+### Kontrol Edilen Servisler
+
+| Servis | Tag | Sağlıksız → Etki |
+|--------|-----|-------------------|
+| **SQL Server** | critical | Uygulama çalışamaz |
+| **Redis** | critical | LKS, Idempotency devre dışı |
+| **Elasticsearch** | supporting | Loglama etkilenir (Degraded) |
+| **Hangfire** | supporting | Zamanlanmış görevler durur (Degraded) |
+| **Fraud Engine** | business | Aktif senaryo yoksa tüm işlemler kontrolsüz (Unhealthy) |
 
 ---
 
-## İşlem Akışı (Uçtan Uca)
+## Cross-Module İletişim
 
-```
-POS/Client
-    │  Idempotency-Key: T1017506:260214001
-    ▼
-ProcessTransactionCommand
-    │
-    ├─ 1. IdempotencyBehavior → key kontrol (Redis SET NX)
-    ├─ 2. Validation → TransactionType, Amount
-    ├─ 3. FraudEngine → Senaryo tarama (< 100ms hedef)
-    │     ├─ Clean (score < 80) → devam
-    │     ├─ Suspicious → devam (Review)
-    │     └─ Fraudulent (score ≥ 80) → REJECT "05"
-    ├─ 4. LimitService → Limit kontrol (Redis + DB)
-    │     ├─ Tek işlem limiti
-    │     ├─ Günlük limit
-    │     └─ Aylık limit → aşarsa REJECT "51"
-    ├─ 5. Limit Reserve → Redis INCR
-    ├─ 6. Approve → AuthorizationCode üret
-    ├─ 7. Limit Commit
-    ├─ 8. Save → DB + Domain Events
-    │     ├─ TransactionCompletedIntegrationEvent
-    │     │     ├─ → Campaign (kazanım hesapla)
-    │     │     ├─ → Fee (komisyon hesapla)
-    │     │     └─ → Accounting (muhasebe kaydı)
-    │     └─ FraudDetectedIntegrationEvent (fraud hit varsa)
-    │           └─ → Dispute (itiraz kaydı)
-    └─ 9. Idempotency Complete → sonuç cache'le (24h)
-```
+### Shared Interface'ler
 
----
-
-## Event-Driven Mimari
+| Interface | Provider | Consumer | Açıklama |
+|-----------|----------|----------|----------|
+| `ICardLimitProvider` | Card.Infrastructure | Transaction | Kart bazlı limit çözümleme |
+| `IMerchantValidationService` | Merchant.Infrastructure | Transaction | Merchant/Terminal aktiflik |
+| `ICardBlockCheckService` | EarlyBlockResolution.Infra | Transaction | Blokeli kart kontrolü |
 
 ### Integration Events
 
@@ -206,6 +270,7 @@ ProcessTransactionCommand
 ┌─────────────────────────────────────────────────────────┐
 │  API Layer — Controllers, JWT Auth, Middleware           │
 │  IdempotencyMiddleware, CorrelationId, RateLimiting     │
+│  HealthChecks (SQL, Redis, ELK, Hangfire, Fraud)        │
 ├─────────────────────────────────────────────────────────┤
 │  Application Layer — Commands/Queries (MediatR)         │
 │  IdempotencyBehavior, Event Handlers, Services          │
@@ -217,7 +282,8 @@ ProcessTransactionCommand
 │  Redis, Polly, IdempotencyStore, FraudEngine            │
 ├─────────────────────────────────────────────────────────┤
 │  Shared Layer — Audit Trail, Kernel, Idempotency        │
-│  ICardLimitProvider, Events, Data Extensions            │
+│  ICardLimitProvider, IMerchantValidationService         │
+│  ICardBlockCheckService, Events, Data Extensions        │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -234,6 +300,7 @@ ProcessTransactionCommand
 | Strategy | Fraud rule evaluator |
 | State Machine | Card application lifecycle |
 | Interceptor | Audit trail (EF Core SaveChanges) |
+| Cross-module Services | Shared interface + modül-specific impl |
 
 ---
 
@@ -250,6 +317,7 @@ ProcessTransactionCommand
 | Auth | JWT + BCrypt + Keycloak |
 | Jobs | Hangfire |
 | Logging | Serilog + Elasticsearch + Kibana |
+| Health Checks | AspNetCore.HealthChecks (SQL, Redis, ELK) |
 | Container | Docker Compose |
 
 ---
@@ -283,7 +351,11 @@ Update-Database -Context CampaignDbContext
 dotnet run --project CardMerchantSystem.API
 ```
 
-Swagger: `https://localhost:7202/swagger`
+| Adres | Açıklama |
+|-------|----------|
+| `https://localhost:7202/swagger` | Swagger UI |
+| `https://localhost:7202/health` | Health Check |
+| `https://localhost:7202/health/ready` | Readiness Probe |
 
 ### 4. Test Kullanıcıları
 
@@ -291,6 +363,11 @@ Swagger: `https://localhost:7202/swagger`
 |----------|----------|-----|
 | admin | Admin123! | Admin |
 | callcenter | Test123! | CallCenterAgent |
+
+### 5. Postman
+
+`docs/CardMerchantSystem-Lifecycle.postman_collection.json` dosyasını import edin.
+50+ request, otomatik variable chain ile uçtan uca test.
 
 ---
 
@@ -308,5 +385,5 @@ Swagger: `https://localhost:7202/swagger`
 
 ---
 
-**Son Güncelleme:** 18 Şubat 2026
-**Versiyon:** 1.8.0
+**Son Güncelleme:** 25 Şubat 2026
+**Versiyon:** 1.9.0

@@ -5,6 +5,7 @@ namespace EarlyBlockResolution.Domain.Repositories;
 
 public interface ICardBlockRepository
 {
+    Task<IReadOnlyList<CardBlock>> GetActiveBlocksByCardMaskedAsync(string cardNumberMasked, CancellationToken cancellationToken = default);
     Task<CardBlock?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<CardBlock?> GetByIdWithVerificationsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<CardBlock?> GetByBlockNumberAsync(string blockNumber, CancellationToken cancellationToken = default);

@@ -32,4 +32,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Fraud\" />
+    <Folder Include="Idempotency\" />
+  </ItemGroup>
+
 </Project>
